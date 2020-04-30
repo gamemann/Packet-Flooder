@@ -271,6 +271,9 @@ void *threadHndl(void *data)
 
     // Close socket.
     close(sockfd);
+
+    // Exit thread.
+    pthread_exit(NULL);
 }
 
 // Command line options.
