@@ -2,7 +2,7 @@
 ## Description
 This is an improved version of my UDP Sender [program](https://github.com/gamemann/UDP-Sender). However, this program also supports TCP SYN floods. The source IP is completely randomized/spoofed each time a packet is sent. 
 
-## What Did I make This?
+## Why Did I make This?
 I've been learning how to mitigate TCP-related attacks recently and decided to make a TCP SYN flood tool. Since I was planning to rewrite my UDP Sender program anyways, I decided to create a program that does both UDP and TCP (SYN) floods.
 
 ## Compiling
@@ -21,7 +21,7 @@ Here's output from the `--help` flag that goes over the program's command line u
 ./flood --help
 Usage for: ./flood:
 --dev -i => Interface name to bind to.
---dst -d => Destination IP to send TCP packets to.
+--dst -d => Destination IP to send packets to.
 --port -p => Destination port (0 = random port).
 --interval => Interval between sending packets in micro seconds.
 --threads -t => Amount of threads to spawn (default is host's CPU count).
