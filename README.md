@@ -2,7 +2,7 @@
 ## Description
 This is an improved version of my UDP Sender [program](https://github.com/gamemann/UDP-Sender). However, this program also supports TCP SYN floods. The source IP is completely randomized/spoofed each time a packet is sent. 
 
-## Why Did I make This?
+## Why Did I Make This?
 I've been learning how to mitigate TCP-related attacks recently and decided to make a TCP SYN flood tool. Since I was planning to rewrite my UDP Sender program anyways, I decided to create a program that does both UDP and TCP (SYN) floods.
 
 ## Compiling
