@@ -367,11 +367,11 @@ int main(int argc, char *argv[])
     if (help)
     {
         fprintf(stdout, "Usage for: %s:\n" \
-            "--dev -i => Interface name to bind to\n" \
-            "--dst -d => Destination IP to send TCP packets to\n" \
-            "--port -p => Destination port (0 = random port)\n" \
+            "--dev -i => Interface name to bind to.\n" \
+            "--dst -d => Destination IP to send TCP packets to.\n" \
+            "--port -p => Destination port (0 = random port).\n" \
             "--interval => Interval between sending packets in micro seconds.\n" \
-            "--threads -t => Amount of threads to spawn (default is host's CPU count)\n" \
+            "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
