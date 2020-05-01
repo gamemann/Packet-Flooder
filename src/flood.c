@@ -307,7 +307,7 @@ void parse_command_line(int argc, char *argv[])
     int c;
 
     // Parse command line.
-    while ((c = getopt_long(argc, argv, "i:d:t:vhs:", longoptions, NULL)) != -1)
+    while ((c = getopt_long(argc, argv, "i:d:t:vhs:p:", longoptions, NULL)) != -1)
     {
         switch(c)
         {
