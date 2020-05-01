@@ -27,8 +27,9 @@
 // Command line structure.
 struct pcktinfo
 {
-    char *dIP;
     char *interface;
+    char *sIP;
+    char *dIP;
     uint16_t port;
     uint64_t time;
     uint16_t threads;
@@ -140,16 +141,24 @@ void *threadHndl(void *data)
             dstPort = pckt.port;
         }
 
-        // Spoof source IP as any IP address.
-        uint16_t tmp[4];
         char IP[32];
 
-        tmp[0] = randNum(1, 254);
-        tmp[1] = randNum(1, 254);
-        tmp[2] = randNum(1, 254);
-        tmp[3] = randNum(1, 254);
+        if (pckt.sIP == NULL)
+        {
+            // Spoof source IP as any IP address.
+            uint16_t tmp[4];
+            
+            tmp[0] = randNum(1, 254);
+            tmp[1] = randNum(1, 254);
+            tmp[2] = randNum(1, 254);
+            tmp[3] = randNum(1, 254);
 
-        sprintf(IP, "%d.%d.%d.%d", tmp[0], tmp[1], tmp[2], tmp[3]);
+            sprintf(IP, "%d.%d.%d.%d", tmp[0], tmp[1], tmp[2], tmp[3]);
+        }
+        {
+            //strcpy(pckt.sIP, IP);
+            memcpy(IP, pckt.sIP, strlen(pckt.sIP));
+        }
 
         // Initialize packet buffer.
         char buffer[MAX_PCKT_LENGTH];
@@ -280,6 +289,7 @@ void *threadHndl(void *data)
 static struct option longoptions[] =
 {
     {"dev", required_argument, NULL, 'i'},
+    {"src", required_argument, NULL, 's'},
     {"dst", required_argument, NULL, 'd'},
     {"port", required_argument, NULL, 'p'},
     {"interval", required_argument, NULL, 1},
@@ -297,12 +307,17 @@ void parse_command_line(int argc, char *argv[])
     int c;
 
     // Parse command line.
-    while ((c = getopt_long(argc, argv, "i:d:t:vh", longoptions, NULL)) != -1)
+    while ((c = getopt_long(argc, argv, "i:d:t:vhs:", longoptions, NULL)) != -1)
     {
         switch(c)
         {
             case 'i':
                 pckt.interface = optarg;
+
+                break;
+
+            case 's':
+                pckt.sIP = optarg;
 
                 break;
 
@@ -371,6 +386,7 @@ int main(int argc, char *argv[])
     {
         fprintf(stdout, "Usage for: %s:\n" \
             "--dev -i => Interface name to bind to.\n" \
+            "--src -s => Source address (none = random/spoof).\n"
             "--dst -d => Destination IP to send packets to.\n" \
             "--port -p => Destination port (0 = random port).\n" \
             "--interval => Interval between sending packets in micro seconds.\n" \
