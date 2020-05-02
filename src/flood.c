@@ -503,6 +503,7 @@ int main(int argc, char *argv[])
             "--smac => Source MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
+            "--nostats => Do not track PPS and bandwidth. This may increase performance.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
             "--tcp => Send TCP packet with SYN flag set instead of UDP packet.\n" \
