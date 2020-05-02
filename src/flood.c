@@ -19,6 +19,7 @@
 #include <getopt.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 #include "include/csum.h"
 
@@ -45,6 +46,7 @@ int tcp = 0;
 int verbose = 0;
 int internal = 0;
 uint64_t pcktCount = 0;
+uint64_t totalData = 0;
 uint8_t dMAC[ETH_ALEN];
 uint8_t sMAC[ETH_ALEN];
 
@@ -281,6 +283,8 @@ void *threadHndl(void *data)
 
         pcktCount++;
 
+        totalData += sent;
+
         // Verbose mode.
         if (verbose)
         {
@@ -452,6 +456,9 @@ int main(int argc, char *argv[])
     // Print information.
     fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Time => %" PRIu64 " micro seconds.\n", pckt.dIP, pckt.port, pckt.interface, pckt.threads, pckt.time);
 
+    // Start time.
+    time_t startTime = time(NULL);
+
     // Loop thread each thread.
     for (uint16_t i = 0; i < pckt.threads; i++)
     {
@@ -473,11 +480,26 @@ int main(int argc, char *argv[])
         sleep(1);
     }
 
-    // Debug.
-    fprintf(stdout, "Cleaning up...\n");
+    // End time.
+    time_t endTime = time(NULL);
 
     // Wait a second for cleanup.
     sleep(1);
+
+    // Statistics
+    time_t totalTime = endTime - startTime;
+    uint64_t pps = pcktCount / (uint64_t)totalTime;
+    uint64_t MBTotal = totalData / 1000000;
+    uint64_t MBsp = (totalData / (uint64_t)totalTime) / 1000000;
+    uint64_t mbTotal = totalData / 125000;
+    uint64_t mbps = (totalData / (uint64_t)totalTime) / 125000;
+
+    // Print statistics.
+    fprintf(stdout, "Finished in %lu seconds.\n\n", totalTime);
+
+    fprintf(stdout, "Packets Total => %" PRIu64 ".\nPackets Per Second => %" PRIu64 ".\n\n", pcktCount, pps);
+    fprintf(stdout, "Megabytes Total => %" PRIu64 ".\nMegabytes Per Second => %" PRIu64 ".\n\n", MBTotal, MBsp);
+    fprintf(stdout, "Megabits Total => %" PRIu64 ".\nMegabits Per Second => %" PRIu64 ".\n\n", mbTotal, mbps);
 
     // Exit program successfully.
     exit(0);
