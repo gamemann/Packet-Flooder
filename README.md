@@ -35,7 +35,6 @@ Usage for: ./flood:
 --max => Maximum payload length.
 --tcp => Send TCP packet with SYN flag set instead of UDP packet.
 --help -h => Show help menu information.
-
 ```
 
 Example:
