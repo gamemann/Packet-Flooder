@@ -310,7 +310,7 @@ void *threadHndl(void *data)
             }
         }
 
-        if (pcktCount >= pckt.pcktCount)
+        if (pckt.pcktCount != 0 && pcktCount >= pckt.pcktCount)
         {
             cont = 0;
         }
