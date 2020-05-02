@@ -256,7 +256,7 @@ void *threadHndl(void *data)
         // Fill out payload with random characters.
         for (uint16_t i = 0; i < dataLen; i++)
         {
-            *data = rand() % 255;
+            *data = rand_r(&seed);
             *data++;
         }
 
