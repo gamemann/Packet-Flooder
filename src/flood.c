@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
     time_t endTime = time(NULL);
 
     // Wait a second for cleanup.
-    sleep(1);
+    sleep(2);
 
     // Statistics
     time_t totalTime = endTime - startTime;
