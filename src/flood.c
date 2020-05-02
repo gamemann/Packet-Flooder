@@ -26,31 +26,53 @@
 #define MAX_PCKT_LENGTH 0xFFFF
 
 // Command line structure.
-struct pcktinfo
+char *interface;
+char *sIP;
+char *dIP;
+uint16_t port;
+uint64_t interval;
+uint16_t threads;
+uint16_t min;
+uint16_t max;
+uint64_t pcktCountMax;
+time_t seconds;
+int help = 0;
+int tcp = 0;
+int verbose = 0;
+int internal = 0;
+
+// Global variables.
+uint8_t cont = 1;
+time_t startTime;
+uint8_t dMAC[ETH_ALEN];
+uint64_t pcktCount = 0;
+uint64_t totalData = 0;
+
+struct thread_pcktinfo 
+{
+    uint64_t pcktCount;
+    uint64_t totalData;
+};
+
+// Thread structure.
+struct pthread_info
 {
     char *interface;
     char *sIP;
     char *dIP;
     uint16_t port;
-    uint64_t time;
-    uint16_t threads;
+    uint64_t interval;
     uint16_t min;
     uint16_t max;
-    uint64_t pcktCount;
+    uint64_t pcktCountMax;
     time_t seconds;
-    time_t startingTime;
-} pckt;
+    int tcp;
+    int verbose;
+    int internal;
 
-// Global variables.
-uint8_t cont = 1;
-int help = 0;
-int tcp = 0;
-int verbose = 0;
-int internal = 0;
-uint64_t pcktCount = 0;
-uint64_t totalData = 0;
-uint8_t dMAC[ETH_ALEN];
-uint8_t sMAC[ETH_ALEN];
+    time_t startingTime;
+    uint8_t dMAC[ETH_ALEN];
+};
 
 void signalHndl(int tmp)
 {
@@ -83,12 +105,18 @@ uint16_t randNum(uint16_t min, uint16_t max, unsigned int seed)
 
 void *threadHndl(void *data)
 {
+    // Pass info.
+    struct pthread_info *info = (struct pthread_info *)data;
+
+    // Thread variables.
+    uint8_t sMAC[ETH_ALEN];
+
     // Create sockaddr_ll struct.
     struct sockaddr_ll sin;
 
     // Fill out sockaddr_ll struct.
     sin.sll_family = PF_PACKET;
-    sin.sll_ifindex = if_nametoindex(pckt.interface);
+    sin.sll_ifindex = if_nametoindex(info->interface);
     sin.sll_protocol = htons(ETH_P_IP);
     sin.sll_halen = ETH_ALEN;
 
@@ -105,7 +133,7 @@ void *threadHndl(void *data)
 
     // Receive the interface's MAC address (the source MAC).
     struct ifreq ifr;
-    strcpy(ifr.ifr_name, pckt.interface);
+    strcpy(ifr.ifr_name, info->interface);
 
     // Attempt to get MAC address.
     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) != 0)
@@ -127,12 +155,12 @@ void *threadHndl(void *data)
         pthread_exit(NULL);
     }
 
-    // Create rand_r() seed.
-    unsigned int seed = (unsigned int)pthread_self();
-
     // Loop.
     while (cont)
     {
+        // Create rand_r() seed.
+        unsigned int seed = (unsigned int)pcktCount;
+
         // Get source port (random).
         uint16_t srcPort;
 
@@ -142,18 +170,18 @@ void *threadHndl(void *data)
         uint16_t dstPort;
 
         // Check if port is 0 (random).
-        if (pckt.port == 0)
+        if (info->port == 0)
         {
             dstPort = randNum(10, 65535, seed);
         }
         else
         {
-            dstPort = pckt.port;
+            dstPort = info->port;
         }
 
         char IP[32];
 
-        if (pckt.sIP == NULL)
+        if (info->sIP == NULL)
         {
             // Spoof source IP as any IP address.
             uint16_t tmp[4];
@@ -177,8 +205,7 @@ void *threadHndl(void *data)
         }
         else
         {
-            //strcpy(pckt.sIP, IP);
-            memcpy(IP, pckt.sIP, strlen(pckt.sIP));
+            memcpy(IP, info->sIP, strlen(info->sIP));
         }
 
         // Initialize packet buffer.
@@ -190,7 +217,7 @@ void *threadHndl(void *data)
         // Fill out ethernet header.
         eth->h_proto = htons(ETH_P_IP);
         memcpy(eth->h_source, sMAC, ETH_ALEN);
-        memcpy(eth->h_dest, dMAC, ETH_ALEN);
+        memcpy(eth->h_dest, info->dMAC, ETH_ALEN);
 
         // Create IP header.
         struct iphdr *iph = (struct iphdr *)(buffer + sizeof(struct ethhdr));
@@ -200,7 +227,7 @@ void *threadHndl(void *data)
         iph->version = 4;
 
         // Check for TCP.
-        if (tcp)
+        if (info->tcp)
         {
             iph->protocol = IPPROTO_TCP;
         }
@@ -212,12 +239,12 @@ void *threadHndl(void *data)
         iph->id = 0;
         iph->frag_off = 0;
         iph->saddr = inet_addr(IP);
-        iph->daddr = inet_addr(pckt.dIP);
+        iph->daddr = inet_addr(info->dIP);
         iph->tos = 0x00;
         iph->ttl = 64;
 
         // Calculate payload length and payload.
-        uint16_t dataLen = randNum(pckt.min, pckt.max, seed);
+        uint16_t dataLen = randNum(info->min, info->max, seed);
 
         // Initialize payload.
         uint16_t l4header = (iph->protocol == IPPROTO_TCP) ? sizeof(struct tcphdr) : sizeof(struct udphdr);
@@ -293,27 +320,27 @@ void *threadHndl(void *data)
         // Verbose mode.
         if (verbose)
         {
-            fprintf(stdout, "Sent %d bytes to destination. (%" PRIu64 "/%" PRIu64 ")\n", sent, pcktCount, pckt.pcktCount);
+            fprintf(stdout, "Sent %d bytes to destination. (%" PRIu64 "/%" PRIu64 ")\n", sent, pcktCount, info->pcktCountMax);
         }
 
         // Check if we should wait between packets.
-        if (pckt.time > 0)
+        if (info->interval > 0)
         {
-            usleep(pckt.time);
+            usleep(info->interval);
         }
 
         // Check time elasped.
-        if (pckt.seconds != 0)
+        if (info->seconds != 0)
         {
             time_t timeNow = time(NULL);
             
-            if (timeNow >= (pckt.startingTime + pckt.seconds))
+            if (timeNow >= (info->startingTime + info->seconds))
             {
                 cont = 0;
             }
         }
 
-        if (pckt.pcktCount != 0 && pcktCount >= pckt.pcktCount)
+        if (info->pcktCountMax != 0 && pcktCount >= info->pcktCountMax)
         {
             cont = 0;
         }
@@ -356,52 +383,52 @@ void parse_command_line(int argc, char *argv[])
         switch(c)
         {
             case 'i':
-                pckt.interface = optarg;
+                interface = optarg;
 
                 break;
 
             case 's':
-                pckt.sIP = optarg;
+                sIP = optarg;
 
                 break;
 
             case 'd':
-                pckt.dIP = optarg;
+                dIP = optarg;
 
                 break;
 
             case 'p':
-                pckt.port = atoi(optarg);
+                port = atoi(optarg);
 
                 break;
 
             case 1:
-                pckt.time = strtoll(optarg, NULL, 10);
+                interval = strtoll(optarg, NULL, 10);
 
                 break;
 
             case 't':
-                pckt.threads = atoi(optarg);
+                threads = atoi(optarg);
 
                 break;
 
             case 2:
-                pckt.min = atoi(optarg);
+                min = atoi(optarg);
 
                 break;
 
             case 3:
-                pckt.max = atoi(optarg);
+                max = atoi(optarg);
 
                 break;
 
             case 'c':
-                pckt.pcktCount = strtoll(optarg, NULL, 10);
+                pcktCountMax = strtoll(optarg, NULL, 10);
 
                 break;
 
             case 6:
-                pckt.seconds = strtoll(optarg, NULL, 10);
+                seconds = strtoll(optarg, NULL, 10);
 
                 break;
 
@@ -426,13 +453,13 @@ void parse_command_line(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     // Set optional defaults.
-    pckt.threads = get_nprocs();
-    pckt.time = 1000000;
-    pckt.port = 0;
-    pckt.min = 0;
-    pckt.max = 1200;
-    pckt.pcktCount = 0;
-    pckt.seconds = 0;
+    threads = get_nprocs();
+    interval = 1000000;
+    port = 0;
+    min = 0;
+    max = 1200;
+    pcktCountMax = 0;
+    seconds = 0;
 
     // Parse the command line.
     parse_command_line(argc, argv);
@@ -459,7 +486,7 @@ int main(int argc, char *argv[])
     }
 
     // Check if interface argument was set.
-    if (pckt.interface == NULL)
+    if (interface == NULL)
     {
         fprintf(stderr, "Missing --dev option.\n");
 
@@ -467,31 +494,47 @@ int main(int argc, char *argv[])
     }
 
     // Check if destination IP argument was set.
-    if (pckt.dIP == NULL)
+    if (dIP == NULL)
     {
         fprintf(stderr, "Missing --dst option\n");
 
         exit(1);
     }
 
+    // Create pthreads.
+    pthread_t pid[threads];
+
     // Get destination MAC address (gateway MAC).
     GetGatewayMAC();
 
     // Print information.
-    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Time => %" PRIu64 " micro seconds.\n", pckt.dIP, pckt.port, pckt.interface, pckt.threads, pckt.time);
+    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Time => %" PRIu64 " micro seconds.\n", dIP, port, interface, threads, interval);
 
     // Start time.
-    time_t startTime = time(NULL);
-
-    pckt.startingTime = startTime;
+    startTime = time(NULL);
 
     // Loop thread each thread.
-    for (uint16_t i = 0; i < pckt.threads; i++)
+    for (uint16_t i = 0; i < threads; i++)
     {
-        // Create pthread.
-        pthread_t pid;
+        // Create new pthread info structure.
+        struct pthread_info *info = malloc(sizeof(struct pthread_info));
 
-        if ((pid = pthread_create(&pid, NULL, threadHndl, NULL) != 0))
+        // Copy values over.
+        info->interface = interface;
+        info->sIP = sIP;
+        info->dIP = dIP;
+        info->port = port;
+        info->max = max;
+        info->min = min;
+        info->pcktCountMax = pcktCountMax;
+        info->seconds = seconds;
+        info->verbose = verbose;
+        info->tcp = tcp;
+        info->internal = internal;
+        info->startingTime = startTime;
+        memcpy(info->dMAC, dMAC, ETH_ALEN);
+
+        if (pthread_create(&pid[i], NULL, threadHndl, (void *)info) != 0)
         {
             fprintf(stderr, "Error spawning thread %" PRIu16 "...\n", i);
         }
