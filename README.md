@@ -21,15 +21,21 @@ Here's output from the `--help` flag that goes over the program's command line u
 ./flood --help
 Usage for: ./flood:
 --dev -i => Interface name to bind to.
+--src -s => Source address (none = random/spoof).
 --dst -d => Destination IP to send packets to.
 --port -p => Destination port (0 = random port).
 --interval => Interval between sending packets in micro seconds.
 --threads -t => Amount of threads to spawn (default is host's CPU count).
+--count -c => The maximum packet count allowed sent.
+--time => Amount of time in seconds to run tool for.
+--smac => Source MAC address in xx:xx:xx:xx:xx:xx format.
+--dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.
 --verbose -v => Print how much data we sent each time.
 --min => Minimum payload length.
 --max => Maximum payload length.
 --tcp => Send TCP packet with SYN flag set instead of UDP packet.
 --help -h => Show help menu information.
+
 ```
 
 Example:
