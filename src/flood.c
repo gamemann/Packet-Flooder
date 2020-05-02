@@ -349,6 +349,9 @@ void *threadHndl(void *data)
     // Close socket.
     close(sockfd);
 
+    // Free information.
+    free(info);
+
     // Exit thread.
     pthread_exit(NULL);
 }
