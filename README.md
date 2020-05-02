@@ -31,6 +31,7 @@ Usage for: ./flood:
 --smac => Source MAC address in xx:xx:xx:xx:xx:xx format.
 --dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.
 --verbose -v => Print how much data we sent each time.
+--nostats => Do not track PPS and bandwidth. This may increase performance.
 --min => Minimum payload length.
 --max => Maximum payload length.
 --tcp => Send TCP packet with SYN flag set instead of UDP packet.
