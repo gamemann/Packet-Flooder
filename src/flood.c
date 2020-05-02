@@ -40,11 +40,12 @@ int help = 0;
 int tcp = 0;
 int verbose = 0;
 int internal = 0;
+uint8_t sMAC[ETH_ALEN];
+uint8_t dMAC[ETH_ALEN];
 
 // Global variables.
 uint8_t cont = 1;
 time_t startTime;
-uint8_t dMAC[ETH_ALEN];
 uint64_t pcktCount = 0;
 uint64_t totalData = 0;
 
@@ -71,6 +72,7 @@ struct pthread_info
     int internal;
 
     time_t startingTime;
+    uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
 };
 
@@ -79,7 +81,7 @@ void signalHndl(int tmp)
     cont = 0;
 }
 
-void GetGatewayMAC()
+void GetGatewayMAC(uint8_t *dMAC)
 {
     char cmd[] = "ip neigh | grep \"$(ip -4 route list 0/0|cut -d' ' -f3) \"|cut -d' ' -f5|tr '[a-f]' '[A-F]'";
 
@@ -131,21 +133,25 @@ void *threadHndl(void *data)
         pthread_exit(NULL);
     }
 
-    // Receive the interface's MAC address (the source MAC).
-    struct ifreq ifr;
-    strcpy(ifr.ifr_name, info->interface);
-
-    // Attempt to get MAC address.
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) != 0)
+    if (info->sMAC[0] == 0 && info->sMAC[1] == 0 && info->sMAC[2] == 0 && info->sMAC[3] == 0 && info->sMAC[4] == 0 && info->sMAC[5] == 0)
     {
-        perror("ioctl");
+        // Receive the interface's MAC address (the source MAC).
+        struct ifreq ifr;
+        strcpy(ifr.ifr_name, info->interface);
 
-        pthread_exit(NULL);
+        // Attempt to get MAC address.
+        if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) != 0)
+        {
+            perror("ioctl");
+
+            pthread_exit(NULL);
+        }
+
+        // Copy source MAC to necessary variables.
+        memcpy(info->sMAC, ifr.ifr_addr.sa_data, ETH_ALEN);
     }
 
-    // Copy source MAC to necessary variables.
-    memcpy(sMAC, ifr.ifr_addr.sa_data, ETH_ALEN);
-    memcpy(sin.sll_addr, sMAC, ETH_ALEN);
+    memcpy(sin.sll_addr, info->sMAC, ETH_ALEN);
 
     // Attempt to bind socket.
     if (bind(sockfd, (struct sockaddr *)&sin, sizeof(sin)) != 0)
@@ -369,6 +375,8 @@ static struct option longoptions[] =
     {"max", required_argument, NULL, 3},
     {"count", required_argument, NULL, 'c'},
     {"time", required_argument, NULL, 6},
+    {"smac", required_argument, NULL, 7},
+    {"dmac", required_argument, NULL, 8},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
@@ -435,6 +443,16 @@ void parse_command_line(int argc, char *argv[])
 
                 break;
 
+            case 7:
+                sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &sMAC[0], &sMAC[1], &sMAC[2], &sMAC[3], &sMAC[4], &sMAC[5]);
+
+                break;
+
+            case 8:
+                sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dMAC[0], &dMAC[1], &dMAC[2], &dMAC[3], &dMAC[4], &dMAC[5]);
+
+                break;
+
             case 'v':
                 verbose = 1;
 
@@ -479,6 +497,8 @@ int main(int argc, char *argv[])
             "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
             "--count -c => The maximum packet count allowed sent.\n" \
             "--time => Amount of time in seconds to run tool for.\n" \
+            "--smac => Source MAC address in xx:xx:xx:xx:xx:xx format.\n" \
+            "--dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
@@ -507,9 +527,6 @@ int main(int argc, char *argv[])
     // Create pthreads.
     pthread_t pid[threads];
 
-    // Get destination MAC address (gateway MAC).
-    GetGatewayMAC();
-
     // Print information.
     fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Time => %" PRIu64 " micro seconds.\n", dIP, port, interface, threads, interval);
 
@@ -535,7 +552,20 @@ int main(int argc, char *argv[])
         info->tcp = tcp;
         info->internal = internal;
         info->startingTime = startTime;
-        memcpy(info->dMAC, dMAC, ETH_ALEN);
+
+        // Check for inputted destination MAC.
+        if (dMAC[0] == 0 && dMAC[1] == 0 && dMAC[2] == 0 && dMAC[3] == 0 && dMAC[4] == 0 && dMAC[5] == 0)
+        {
+            // Get destination MAC address (gateway MAC).
+            GetGatewayMAC(info->dMAC);
+        }
+        else
+        {
+            memcpy(info->dMAC, dMAC, ETH_ALEN);
+        }
+
+        memcpy(info->sMAC, sMAC, ETH_ALEN);
+        
 
         if (pthread_create(&pid[i], NULL, threadHndl, (void *)info) != 0)
         {
