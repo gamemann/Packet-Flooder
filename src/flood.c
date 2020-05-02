@@ -35,6 +35,7 @@ struct pcktinfo
     uint16_t threads;
     uint16_t min;
     uint16_t max;
+    uint64_t pcktCount;
 } pckt;
 
 // Global variables.
@@ -43,6 +44,7 @@ int help = 0;
 int tcp = 0;
 int verbose = 0;
 int internal = 0;
+uint64_t pcktCount = 0;
 uint8_t dMAC[ETH_ALEN];
 uint8_t sMAC[ETH_ALEN];
 
@@ -277,16 +279,23 @@ void *threadHndl(void *data)
             continue;
         }
 
+        pcktCount++;
+
         // Verbose mode.
         if (verbose)
         {
-            fprintf(stdout, "Sent %d bytes to destination.\n", sent);
+            fprintf(stdout, "Sent %d bytes to destination. (%" PRIu64 "/%" PRIu64 ")\n", sent, pcktCount, pckt.pcktCount);
         }
 
         // Check if we should wait between packets.
         if (pckt.time > 0)
         {
             usleep(pckt.time);
+        }
+
+        if (pcktCount >= pckt.pcktCount)
+        {
+            cont = 0;
         }
     }
 
@@ -308,6 +317,7 @@ static struct option longoptions[] =
     {"threads", required_argument, NULL, 't'},
     {"min", required_argument, NULL, 2},
     {"max", required_argument, NULL, 3},
+    {"count", required_argument, NULL, 'c'},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
@@ -320,7 +330,7 @@ void parse_command_line(int argc, char *argv[])
     int c;
 
     // Parse command line.
-    while ((c = getopt_long(argc, argv, "i:d:t:vhs:p:", longoptions, NULL)) != -1)
+    while ((c = getopt_long(argc, argv, "i:d:t:vhs:p:c:", longoptions, NULL)) != -1)
     {
         switch(c)
         {
@@ -364,6 +374,11 @@ void parse_command_line(int argc, char *argv[])
 
                 break;
 
+            case 'c':
+                pckt.pcktCount = strtoll(optarg, NULL, 10);
+
+                break;
+
             case 'v':
                 verbose = 1;
 
@@ -390,6 +405,7 @@ int main(int argc, char *argv[])
     pckt.port = 0;
     pckt.min = 0;
     pckt.max = 1200;
+    pckt.pcktCount = 0;
 
     // Parse the command line.
     parse_command_line(argc, argv);
@@ -404,6 +420,7 @@ int main(int argc, char *argv[])
             "--port -p => Destination port (0 = random port).\n" \
             "--interval => Interval between sending packets in micro seconds.\n" \
             "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
+            "--count -c => The maximum packet count allowed sent.\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
