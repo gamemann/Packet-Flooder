@@ -37,6 +37,8 @@ struct pcktinfo
     uint16_t min;
     uint16_t max;
     uint64_t pcktCount;
+    time_t seconds;
+    time_t startingTime;
 } pckt;
 
 // Global variables.
@@ -297,6 +299,17 @@ void *threadHndl(void *data)
             usleep(pckt.time);
         }
 
+        // Check time elasped.
+        if (pckt.seconds != 0)
+        {
+            time_t timeNow = time(NULL);
+            
+            if (timeNow >= (pckt.startingTime + pckt.seconds))
+            {
+                cont = 0;
+            }
+        }
+
         if (pcktCount >= pckt.pcktCount)
         {
             cont = 0;
@@ -322,6 +335,7 @@ static struct option longoptions[] =
     {"min", required_argument, NULL, 2},
     {"max", required_argument, NULL, 3},
     {"count", required_argument, NULL, 'c'},
+    {"time", required_argument, NULL, 6},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
@@ -383,6 +397,11 @@ void parse_command_line(int argc, char *argv[])
 
                 break;
 
+            case 6:
+                pckt.seconds = strtoll(optarg, NULL, 10);
+
+                break;
+
             case 'v':
                 verbose = 1;
 
@@ -410,6 +429,7 @@ int main(int argc, char *argv[])
     pckt.min = 0;
     pckt.max = 1200;
     pckt.pcktCount = 0;
+    pckt.seconds = 0;
 
     // Parse the command line.
     parse_command_line(argc, argv);
@@ -425,6 +445,7 @@ int main(int argc, char *argv[])
             "--interval => Interval between sending packets in micro seconds.\n" \
             "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
             "--count -c => The maximum packet count allowed sent.\n" \
+            "--time => Amount of time in seconds to run tool for.\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
@@ -458,6 +479,8 @@ int main(int argc, char *argv[])
 
     // Start time.
     time_t startTime = time(NULL);
+
+    pckt.startingTime = startTime;
 
     // Loop thread each thread.
     for (uint16_t i = 0; i < pckt.threads; i++)
