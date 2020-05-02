@@ -40,6 +40,7 @@ int help = 0;
 int tcp = 0;
 int verbose = 0;
 int internal = 0;
+int nostats = 0;
 uint8_t sMAC[ETH_ALEN];
 uint8_t dMAC[ETH_ALEN];
 
@@ -64,6 +65,7 @@ struct pthread_info
     int tcp;
     int verbose;
     int internal;
+    int nostats;
 
     time_t startingTime;
     uint8_t sMAC[ETH_ALEN];
@@ -310,9 +312,11 @@ void *threadHndl(void *data)
             continue;
         }
 
-        pcktCount++;
-
-        totalData += sent;
+        if (!info->nostats)
+        {
+            pcktCount++;
+            totalData += sent;
+        }
 
         // Verbose mode.
         if (info->verbose)
@@ -339,7 +343,7 @@ void *threadHndl(void *data)
             }
         }
 
-        if (info->pcktCountMax != 0 && pcktCount >= info->pcktCountMax)
+        if (!info->nostats && info->pcktCountMax != 0 && pcktCount >= info->pcktCountMax)
         {
             cont = 0;
 
@@ -375,6 +379,7 @@ static struct option longoptions[] =
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
+    {"nostats", no_argument, &nostats, 9},
     {"help", no_argument, &help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -476,6 +481,7 @@ int main(int argc, char *argv[])
     max = 1200;
     pcktCountMax = 0;
     seconds = 0;
+    nostats = 0;
     memset(sMAC, 0, ETH_ALEN);
     memset(dMAC, 0, ETH_ALEN);
 
@@ -549,6 +555,7 @@ int main(int argc, char *argv[])
         info->verbose = verbose;
         info->tcp = tcp;
         info->internal = internal;
+        info->nostats = nostats;
         info->startingTime = startTime;
 
         // Check for inputted destination MAC.
@@ -587,19 +594,24 @@ int main(int argc, char *argv[])
     sleep(1);
 
     // Statistics
-    time_t totalTime = endTime - startTime;
-    uint64_t pps = pcktCount / (uint64_t)totalTime;
-    uint64_t MBTotal = totalData / 1000000;
-    uint64_t MBsp = (totalData / (uint64_t)totalTime) / 1000000;
-    uint64_t mbTotal = totalData / 125000;
-    uint64_t mbps = (totalData / (uint64_t)totalTime) / 125000;
 
-    // Print statistics.
+    time_t totalTime = endTime - startTime;
+
     fprintf(stdout, "Finished in %lu seconds.\n\n", totalTime);
 
-    fprintf(stdout, "Packets Total => %" PRIu64 ".\nPackets Per Second => %" PRIu64 ".\n\n", pcktCount, pps);
-    fprintf(stdout, "Megabytes Total => %" PRIu64 ".\nMegabytes Per Second => %" PRIu64 ".\n\n", MBTotal, MBsp);
-    fprintf(stdout, "Megabits Total => %" PRIu64 ".\nMegabits Per Second => %" PRIu64 ".\n\n", mbTotal, mbps);
+    if (!nostats)
+    {
+        uint64_t pps = pcktCount / (uint64_t)totalTime;
+        uint64_t MBTotal = totalData / 1000000;
+        uint64_t MBsp = (totalData / (uint64_t)totalTime) / 1000000;
+        uint64_t mbTotal = totalData / 125000;
+        uint64_t mbps = (totalData / (uint64_t)totalTime) / 125000;
+
+        // Print statistics.
+        fprintf(stdout, "Packets Total => %" PRIu64 ".\nPackets Per Second => %" PRIu64 ".\n\n", pcktCount, pps);
+        fprintf(stdout, "Megabytes Total => %" PRIu64 ".\nMegabytes Per Second => %" PRIu64 ".\n\n", MBTotal, MBsp);
+        fprintf(stdout, "Megabits Total => %" PRIu64 ".\nMegabits Per Second => %" PRIu64 ".\n\n", mbTotal, mbps);
+    }
 
     // Exit program successfully.
     exit(0);
