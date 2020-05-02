@@ -340,12 +340,16 @@ void *threadHndl(void *data)
             if (timeNow >= (info->startingTime + info->seconds))
             {
                 cont = 0;
+                
+                break;
             }
         }
 
         if (info->pcktCountMax != 0 && pcktCount >= info->pcktCountMax)
         {
             cont = 0;
+
+            break;
         }
     }
 
@@ -586,7 +590,7 @@ int main(int argc, char *argv[])
     time_t endTime = time(NULL);
 
     // Wait a second for cleanup.
-    sleep(2);
+    sleep(1);
 
     // Statistics
     time_t totalTime = endTime - startTime;
