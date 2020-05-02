@@ -156,7 +156,7 @@ void *threadHndl(void *data)
     }
 
     // Loop.
-    while (cont)
+    while (1)
     {
         // Create rand_r() seed.
         unsigned int seed = (unsigned int)pcktCount;
@@ -318,7 +318,7 @@ void *threadHndl(void *data)
         totalData += sent;
 
         // Verbose mode.
-        if (verbose)
+        if (info->verbose)
         {
             fprintf(stdout, "Sent %d bytes to destination. (%" PRIu64 "/%" PRIu64 ")\n", sent, pcktCount, info->pcktCountMax);
         }
@@ -330,7 +330,7 @@ void *threadHndl(void *data)
         }
 
         // Check time elasped.
-        if (info->seconds != 0)
+        if (info->seconds > 0)
         {
             time_t timeNow = time(NULL);
             
