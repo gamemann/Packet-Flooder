@@ -42,6 +42,7 @@ uint8_t cont = 1;
 int help = 0;
 int tcp = 0;
 int verbose = 0;
+int internal = 0;
 uint8_t dMAC[ETH_ALEN];
 uint8_t sMAC[ETH_ALEN];
 
@@ -147,14 +148,25 @@ void *threadHndl(void *data)
         {
             // Spoof source IP as any IP address.
             uint16_t tmp[4];
-            
-            tmp[0] = randNum(1, 254);
-            tmp[1] = randNum(1, 254);
-            tmp[2] = randNum(1, 254);
-            tmp[3] = randNum(1, 254);
+
+            if (internal)
+            {
+                tmp[0] = randNum(10, 10);
+                tmp[1] = randNum(0, 254);
+                tmp[2] = randNum(0, 254);
+                tmp[3] = randNum(0, 254);
+            }
+            else
+            {
+                tmp[0] = randNum(1, 254);
+                tmp[1] = randNum(0, 254);
+                tmp[2] = randNum(0, 254);
+                tmp[3] = randNum(0, 254);
+            }
 
             sprintf(IP, "%d.%d.%d.%d", tmp[0], tmp[1], tmp[2], tmp[3]);
         }
+        else
         {
             //strcpy(pckt.sIP, IP);
             memcpy(IP, pckt.sIP, strlen(pckt.sIP));
@@ -298,6 +310,7 @@ static struct option longoptions[] =
     {"max", required_argument, NULL, 3},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
+    {"internal", no_argument, &internal, 5},
     {"help", no_argument, &help, 'h'},
     {NULL, 0, NULL, 0}
 };
