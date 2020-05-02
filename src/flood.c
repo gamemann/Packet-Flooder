@@ -76,9 +76,9 @@ void GetGatewayMAC()
     }
 }
 
-uint16_t randNum(uint16_t min, uint16_t max)
+uint16_t randNum(uint16_t min, uint16_t max, unsigned int seed)
 {
-    return (rand() % (max - min + 1)) + min;
+    return (rand_r(&seed) % (max - min + 1)) + min;
 }
 
 void *threadHndl(void *data)
@@ -127,13 +127,16 @@ void *threadHndl(void *data)
         pthread_exit(NULL);
     }
 
+    // Create rand_r() seed.
+    unsigned int seed = (unsigned int)pthread_self();
+
     // Loop.
     while (cont)
     {
         // Get source port (random).
         uint16_t srcPort;
 
-        srcPort = randNum(1024, 65535);
+        srcPort = randNum(1024, 65535, seed);
 
         // Get destination port.
         uint16_t dstPort;
@@ -141,7 +144,7 @@ void *threadHndl(void *data)
         // Check if port is 0 (random).
         if (pckt.port == 0)
         {
-            dstPort = randNum(10, 65535);
+            dstPort = randNum(10, 65535, seed);
         }
         else
         {
@@ -157,17 +160,17 @@ void *threadHndl(void *data)
 
             if (internal)
             {
-                tmp[0] = randNum(10, 10);
-                tmp[1] = randNum(0, 254);
-                tmp[2] = randNum(0, 254);
-                tmp[3] = randNum(0, 254);
+                tmp[0] = randNum(10, 10, seed);
+                tmp[1] = randNum(0, 254, seed);
+                tmp[2] = randNum(0, 254, seed);
+                tmp[3] = randNum(0, 254, seed);
             }
             else
             {
-                tmp[0] = randNum(1, 254);
-                tmp[1] = randNum(0, 254);
-                tmp[2] = randNum(0, 254);
-                tmp[3] = randNum(0, 254);
+                tmp[0] = randNum(1, 254, seed);
+                tmp[1] = randNum(0, 254, seed);
+                tmp[2] = randNum(0, 254, seed);
+                tmp[3] = randNum(0, 254, seed);
             }
 
             sprintf(IP, "%d.%d.%d.%d", tmp[0], tmp[1], tmp[2], tmp[3]);
@@ -214,7 +217,7 @@ void *threadHndl(void *data)
         iph->ttl = 64;
 
         // Calculate payload length and payload.
-        uint16_t dataLen = randNum(pckt.min, pckt.max);
+        uint16_t dataLen = randNum(pckt.min, pckt.max, seed);
 
         // Initialize payload.
         uint16_t l4header = (iph->protocol == IPPROTO_TCP) ? sizeof(struct tcphdr) : sizeof(struct udphdr);
