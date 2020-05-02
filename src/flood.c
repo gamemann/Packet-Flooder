@@ -186,16 +186,16 @@ void *threadHndl(void *data)
             if (internal)
             {
                 tmp[0] = randNum(10, 10, seed);
-                tmp[1] = randNum(0, 254, seed);
-                tmp[2] = randNum(0, 254, seed);
-                tmp[3] = randNum(0, 254, seed);
+                tmp[1] = randNum(0, 254, seed + 1);
+                tmp[2] = randNum(0, 254, seed + 2);
+                tmp[3] = randNum(0, 254, seed + 3);
             }
             else
             {
                 tmp[0] = randNum(1, 254, seed);
-                tmp[1] = randNum(0, 254, seed);
-                tmp[2] = randNum(0, 254, seed);
-                tmp[3] = randNum(0, 254, seed);
+                tmp[1] = randNum(0, 254, seed + 1);
+                tmp[2] = randNum(0, 254, seed + 2);
+                tmp[3] = randNum(0, 254, seed + 3);
             }
 
             sprintf(IP, "%d.%d.%d.%d", tmp[0], tmp[1], tmp[2], tmp[3]);
