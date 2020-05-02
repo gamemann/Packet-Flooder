@@ -544,6 +544,7 @@ int main(int argc, char *argv[])
         info->sIP = sIP;
         info->dIP = dIP;
         info->port = port;
+        info->interval = interval;
         info->max = max;
         info->min = min;
         info->pcktCountMax = pcktCountMax;
