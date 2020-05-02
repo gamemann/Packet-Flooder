@@ -81,7 +81,7 @@ void signalHndl(int tmp)
     cont = 0;
 }
 
-void GetGatewayMAC(uint8_t *dMAC)
+void GetGatewayMAC(uint8_t *MAC)
 {
     char cmd[] = "ip neigh | grep \"$(ip -4 route list 0/0|cut -d' ' -f3) \"|cut -d' ' -f5|tr '[a-f]' '[A-F]'";
 
@@ -93,7 +93,7 @@ void GetGatewayMAC(uint8_t *dMAC)
 
         if (fgets(line, sizeof(line), fp) != NULL)
         {
-            sscanf(line, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dMAC[0], &dMAC[1], &dMAC[2], &dMAC[3], &dMAC[4], &dMAC[5]);
+            sscanf(line, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &MAC[0], &MAC[1], &MAC[2], &MAC[3], &MAC[4], &MAC[5]);
         }
 
         pclose(fp);
@@ -109,9 +109,6 @@ void *threadHndl(void *data)
 {
     // Pass info.
     struct pthread_info *info = (struct pthread_info *)data;
-
-    // Thread variables.
-    uint8_t sMAC[ETH_ALEN];
 
     // Create sockaddr_ll struct.
     struct sockaddr_ll sin;
@@ -222,7 +219,7 @@ void *threadHndl(void *data)
 
         // Fill out ethernet header.
         eth->h_proto = htons(ETH_P_IP);
-        memcpy(eth->h_source, sMAC, ETH_ALEN);
+        memcpy(eth->h_source, info->sMAC, ETH_ALEN);
         memcpy(eth->h_dest, info->dMAC, ETH_ALEN);
 
         // Create IP header.
@@ -481,6 +478,8 @@ int main(int argc, char *argv[])
     max = 1200;
     pcktCountMax = 0;
     seconds = 0;
+    memset(sMAC, 0, ETH_ALEN);
+    memset(dMAC, 0, ETH_ALEN);
 
     // Parse the command line.
     parse_command_line(argc, argv);
