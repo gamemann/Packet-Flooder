@@ -70,6 +70,7 @@ struct pthread_info
     time_t startingTime;
     uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
+    uint16_t id;
 };
 
 void signalHndl(int tmp)
@@ -158,7 +159,7 @@ void *threadHndl(void *data)
     while (1)
     {
         // Create rand_r() seed.
-        unsigned int seed = (unsigned int)pcktCount;
+        unsigned int seed = (unsigned int)(pcktCount + info->id);
 
         // Get source port (random).
         uint16_t srcPort;
@@ -558,6 +559,7 @@ int main(int argc, char *argv[])
         info->internal = internal;
         info->nostats = nostats;
         info->startingTime = startTime;
+        info->id = i;
 
         // Check for inputted destination MAC.
         if (dMAC[0] == 0 && dMAC[1] == 0 && dMAC[2] == 0 && dMAC[3] == 0 && dMAC[4] == 0 && dMAC[5] == 0)
