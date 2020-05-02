@@ -49,12 +49,6 @@ time_t startTime;
 uint64_t pcktCount = 0;
 uint64_t totalData = 0;
 
-struct thread_pcktinfo 
-{
-    uint64_t pcktCount;
-    uint64_t totalData;
-};
-
 // Thread structure.
 struct pthread_info
 {
@@ -340,7 +334,7 @@ void *threadHndl(void *data)
             if (timeNow >= (info->startingTime + info->seconds))
             {
                 cont = 0;
-                
+
                 break;
             }
         }
