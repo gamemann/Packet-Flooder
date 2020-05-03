@@ -33,6 +33,12 @@ Usage for: ./flood:
 --payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.
 --verbose -v => Print how much data we've sent each time.
 --nostats => Do not track PPS and bandwidth. This may increase performance.
+--urg => Set the URG flag for TCP packets.
+--ack => Set the ACK flag for TCP packets.
+--psh => Set the PSH flag for TCP packets.
+--rst => Set the RST flag for TCP packets.
+--syn => Set the SYN flag for TCP packets.
+--fin => Set the FIN flag for TCP packets.
 --min => Minimum payload length.
 --max => Maximum payload length.
 --tcp => Send TCP packet with SYN flag set instead of UDP packet.
