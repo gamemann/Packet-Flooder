@@ -637,7 +637,7 @@ int main(int argc, char *argv[])
             "--fin => Set the FIN flag for TCP packets.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
-            "--tcp => Send TCP packet with SYN flag set instead of UDP packet.\n" \
+            "--tcp => Send TCP packets.\n" \
             "--icmp => Send ICMP packets.\n" \
             "--icmptype => The ICMP type to send when --icmp is specified.\n" \
             "--icmpcode => The ICMP code to send when --icmp is specified.\n" \

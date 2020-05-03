@@ -41,7 +41,7 @@ Usage for: ./flood:
 --fin => Set the FIN flag for TCP packets.
 --min => Minimum payload length.
 --max => Maximum payload length.
---tcp => Send TCP packet with SYN flag set instead of UDP packet.
+--tcp => Send TCP packets.
 --icmp => Send ICMP packets.
 --icmptype => The ICMP type to send when --icmp is specified.
 --icmpcode => The ICMP code to send when --icmp is specified.
