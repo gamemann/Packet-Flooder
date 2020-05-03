@@ -131,9 +131,6 @@ void *threadHndl(void *data)
     sin.sll_protocol = htons(ETH_P_IP);
     sin.sll_halen = ETH_ALEN;
 
-    // Thread local variables.
-    uint64_t count;
-
     // Initialize socket FD.
     int sockfd;
 
@@ -178,7 +175,7 @@ void *threadHndl(void *data)
     {
         // Create rand_r() seed.
         unsigned int seed;
-        
+
         if (info->nostats)
         {
             seed = time(NULL) ^ getpid() ^ pthread_self();
