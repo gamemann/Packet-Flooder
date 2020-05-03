@@ -31,6 +31,7 @@ char *interface;
 char *sIP;
 char *dIP;
 uint16_t port = 0;
+uint16_t sport = 0;
 uint64_t interval = 1000000;
 uint16_t threads;
 uint16_t min = 0;
@@ -68,6 +69,7 @@ struct pthread_info
     char *sIP;
     char *dIP;
     uint16_t port;
+    uint16_t sport;
     uint64_t interval;
     uint16_t min;
     uint16_t max;
@@ -195,7 +197,15 @@ void *threadHndl(void *data)
         // Get source port (random).
         uint16_t srcPort;
 
-        srcPort = randNum(1024, 65535, seed);
+        // Check if source port is 0 (random).
+        if (info->sport == 0)
+        {
+            srcPort = randNum(1024, 65535, seed);
+        }
+        else
+        {
+            srcPort = info->sport;
+        }
 
         // Get destination port.
         uint16_t dstPort;
@@ -474,6 +484,7 @@ static struct option longoptions[] =
     {"src", required_argument, NULL, 's'},
     {"dst", required_argument, NULL, 'd'},
     {"port", required_argument, NULL, 'p'},
+    {"sport", required_argument, NULL, 14},
     {"interval", required_argument, NULL, 1},
     {"threads", required_argument, NULL, 't'},
     {"min", required_argument, NULL, 2},
@@ -526,6 +537,11 @@ void parse_command_line(int argc, char *argv[])
 
             case 'p':
                 port = atoi(optarg);
+
+                break;
+
+            case 14:
+                sport = atoi(optarg);
 
                 break;
 
@@ -617,9 +633,10 @@ int main(int argc, char *argv[])
     {
         fprintf(stdout, "Usage for: %s:\n" \
             "--dev -i => Interface name to bind to.\n" \
-            "--src -s => Source address (none = random/spoof).\n"
+            "--src -s => Source address (0/unset = random/spoof).\n"
             "--dst -d => Destination IP to send packets to.\n" \
-            "--port -p => Destination port (0 = random port).\n" \
+            "--port -p => Destination port (0/unset = random port).\n" \
+            "--sport => Source port (0/unset = random port).\n" \
             "--interval => Interval between sending packets in micro seconds.\n" \
             "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
             "--count -c => The maximum packet count allowed sent.\n" \
@@ -682,6 +699,7 @@ int main(int argc, char *argv[])
         info->sIP = sIP;
         info->dIP = dIP;
         info->port = port;
+        info->sport = sport;
         info->interval = interval;
         info->max = max;
         info->min = min;
