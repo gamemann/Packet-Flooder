@@ -428,10 +428,15 @@ void *threadHndl(void *data)
             continue;
         }
 
+        // Add onto stats if enabled.
         if (!info->nostats)
         {
-            pcktCount++;
             totalData += sent;
+        }
+
+        if (!info->nostats || info->pcktCountMax > 0)
+        {
+            pcktCount++;
         }
 
         // Verbose mode.
@@ -459,7 +464,8 @@ void *threadHndl(void *data)
             }
         }
 
-        if (!info->nostats && info->pcktCountMax != 0 && pcktCount >= info->pcktCountMax)
+        // Check packet count.
+        if (info->pcktCountMax > 0 && pcktCount >= info->pcktCountMax)
         {
             cont = 0;
 
