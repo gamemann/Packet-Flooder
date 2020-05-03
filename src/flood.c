@@ -405,8 +405,7 @@ void *threadHndl(void *data)
 
         // Calculate length and checksum of IP header.
         iph->tot_len = htons(sizeof(struct iphdr) + l4header + dataLen);
-        iph->check = 0;
-        iph->check = ip_fast_csum(iph, iph->ihl);
+        update_iph_checksum(iph);
         
         // Initialize variable that represents how much data we've sent.
         uint16_t sent;
