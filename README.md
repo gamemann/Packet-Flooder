@@ -30,6 +30,7 @@ Usage for: ./flood:
 --time => Amount of time in seconds to run tool for.
 --smac => Source MAC address in xx:xx:xx:xx:xx:xx format.
 --dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.
+--payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.
 --verbose -v => Print how much data we sent each time.
 --nostats => Do not track PPS and bandwidth. This may increase performance.
 --min => Minimum payload length.
