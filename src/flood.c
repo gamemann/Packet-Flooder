@@ -42,6 +42,12 @@ int tcp = 0;
 int verbose = 0;
 int internal = 0;
 int nostats = 0;
+int tcp_urg;
+int tcp_ack;
+int tcp_psh;
+int tcp_rst;
+int tcp_syn;
+int tcp_fin;
 uint8_t sMAC[ETH_ALEN];
 uint8_t dMAC[ETH_ALEN];
 
@@ -69,6 +75,12 @@ struct pthread_info
     int verbose;
     int internal;
     int nostats;
+    int tcp_urg;
+    int tcp_ack;
+    int tcp_psh;
+    int tcp_rst;
+    int tcp_syn;
+    int tcp_fin;
 
     time_t startingTime;
     uint8_t sMAC[ETH_ALEN];
@@ -289,8 +301,36 @@ void *threadHndl(void *data)
             tcph->ack_seq = 0;
             tcph->seq = 0;
 
-            // Set SYN flag to 1.
-            tcph->syn = 1;
+            // Check for each flag.
+            if (info->tcp_urg)
+            {
+                tcph->urg = 1;
+            }
+
+            if (info->tcp_ack)
+            {
+                tcph->ack = 1;
+            }
+
+            if (info->tcp_psh)
+            {
+                tcph->psh = 1;
+            }
+
+            if (info->tcp_rst)
+            {
+                tcph->rst = 1;
+            }
+
+            if (info->tcp_syn)
+            {
+                tcph->syn = 1;
+            }
+
+            if (info->tcp_fin)
+            {
+                tcph->fin = 1;
+            }
 
             // Calculate length and checksum of IP header.
             iph->tot_len = htons(sizeof(struct iphdr) + sizeof(struct tcphdr) + dataLen);
@@ -401,6 +441,12 @@ static struct option longoptions[] =
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
     {"nostats", no_argument, &nostats, 9},
+    {"urg", no_argument, &tcp_urg, 11},
+    {"ack", no_argument, &tcp_ack, 11},
+    {"psh", no_argument, &tcp_psh, 11},
+    {"rst", no_argument, &tcp_rst, 11},
+    {"syn", no_argument, &tcp_syn, 11},
+    {"fin", no_argument, &tcp_fin, 11},
     {"help", no_argument, &help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -508,6 +554,12 @@ int main(int argc, char *argv[])
     pcktCountMax = 0;
     seconds = 0;
     nostats = 0;
+    tcp_urg = 0;
+    tcp_ack = 0;
+    tcp_psh = 0;
+    tcp_rst = 0;
+    tcp_syn = 0;
+    tcp_fin = 0;
     memset(sMAC, 0, ETH_ALEN);
     memset(dMAC, 0, ETH_ALEN);
 
@@ -531,6 +583,12 @@ int main(int argc, char *argv[])
             "--payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.\n" \
             "--verbose -v => Print how much data we've sent each time.\n" \
             "--nostats => Do not track PPS and bandwidth. This may increase performance.\n" \
+            "--urg => Set the URG flag for TCP packets.\n" \
+            "--ack => Set the ACK flag for TCP packets.\n" \
+            "--psh => Set the PSH flag for TCP packets.\n" \
+            "--rst => Set the RST flag for TCP packets.\n" \
+            "--syn => Set the SYN flag for TCP packets.\n" \
+            "--fin => Set the FIN flag for TCP packets.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
             "--tcp => Send TCP packet with SYN flag set instead of UDP packet.\n" \
@@ -584,6 +642,12 @@ int main(int argc, char *argv[])
         info->tcp = tcp;
         info->internal = internal;
         info->nostats = nostats;
+        info->tcp_urg = tcp_urg;
+        info->tcp_ack = tcp_ack;
+        info->tcp_psh = tcp_psh;
+        info->tcp_rst = tcp_rst;
+        info->tcp_syn = tcp_syn;
+        info->tcp_fin = tcp_fin;
         info->startingTime = startTime;
         info->id = i;
         info->payloadLength = 0;
