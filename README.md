@@ -42,7 +42,11 @@ Usage for: ./flood:
 --min => Minimum payload length.
 --max => Maximum payload length.
 --tcp => Send TCP packet with SYN flag set instead of UDP packet.
+--icmp => Send ICMP packets.
+--icmptype => The ICMP type to send when --icmp is specified.
+--icmpcode => The ICMP code to send when --icmp is specified.
 --help -h => Show help menu information.
+
 ```
 
 Example:
