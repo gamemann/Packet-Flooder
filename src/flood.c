@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
     pthread_t pid[threads];
 
     // Print information.
-    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Time => %" PRIu64 " micro seconds.\n", dIP, port, interface, threads, interval);
+    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Interval => %" PRIu64 " micro seconds.\n", dIP, port, interface, threads, interval);
 
     // Start time.
     startTime = time(NULL);
