@@ -11,6 +11,7 @@
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
+#include <linux/icmp.h>
 #include <linux/if_packet.h>
 #include <arpa/inet.h>
 #include <signal.h>
@@ -39,6 +40,7 @@ time_t seconds;
 char *payload;
 int help = 0;
 int tcp = 0;
+int icmp = 0;
 int verbose = 0;
 int internal = 0;
 int nostats = 0;
@@ -48,6 +50,8 @@ int tcp_psh;
 int tcp_rst;
 int tcp_syn;
 int tcp_fin;
+int icmp_type = 0;
+int icmp_code = 0;
 uint8_t sMAC[ETH_ALEN];
 uint8_t dMAC[ETH_ALEN];
 
@@ -72,6 +76,7 @@ struct pthread_info
     uint8_t payload[MAX_PCKT_LENGTH];
     uint16_t payloadLength;
     int tcp;
+    int icmp;
     int verbose;
     int internal;
     int nostats;
@@ -81,6 +86,8 @@ struct pthread_info
     int tcp_rst;
     int tcp_syn;
     int tcp_fin;
+    int icmp_type;
+    int icmp_code;
 
     time_t startingTime;
     uint8_t sMAC[ETH_ALEN];
@@ -255,6 +262,10 @@ void *threadHndl(void *data)
         {
             iph->protocol = IPPROTO_TCP;
         }
+        else if (info->icmp)
+        {
+            iph->protocol = IPPROTO_ICMP;
+        }
         else
         {
             iph->protocol = IPPROTO_UDP;
@@ -271,7 +282,26 @@ void *threadHndl(void *data)
         uint16_t dataLen;
 
         // Initialize payload.
-        uint16_t l4header = (iph->protocol == IPPROTO_TCP) ? sizeof(struct tcphdr) : sizeof(struct udphdr);
+        uint16_t l4header;
+
+        switch (iph->protocol)
+        {
+            case IPPROTO_UDP:
+                l4header = sizeof(struct udphdr);
+
+                break;
+
+            case IPPROTO_TCP:
+                l4header = sizeof(struct tcphdr);
+
+                break;
+
+            case IPPROTO_ICMP:
+                l4header = sizeof(struct icmphdr);
+
+                break;
+        }
+
         unsigned char *data = (unsigned char *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr) + l4header);
 
         // Check for custom payload.
@@ -341,14 +371,22 @@ void *threadHndl(void *data)
                 tcph->fin = 1;
             }
 
-            // Calculate length and checksum of IP header.
-            iph->tot_len = htons(sizeof(struct iphdr) + sizeof(struct tcphdr) + dataLen);
-            iph->check = 0;
-            iph->check = ip_fast_csum(iph, iph->ihl);
-
             // Calculate TCP header checksum.
             tcph->check = 0;
             tcph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct tcphdr) + dataLen, IPPROTO_TCP, csum_partial(tcph, sizeof(struct tcphdr) + dataLen, 0));
+        }
+        else if (iph->protocol == IPPROTO_ICMP)
+        {
+            // Create ICMP header.
+            struct icmphdr *icmph = (struct icmphdr *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr));
+
+            // Fill out ICMP header.
+            icmph->type = info->icmp_type;
+            icmph->code = info->icmp_code;
+
+            // Calculate ICMP header's checksum.
+            icmph->checksum = 0;
+            icmph->checksum = do_csum((void *)icmph, sizeof(struct icmphdr) + dataLen);
         }
         else
         {
@@ -360,15 +398,15 @@ void *threadHndl(void *data)
             udph->dest = htons(dstPort);
             udph->len = htons(sizeof(struct udphdr) + dataLen);
 
-            // Calculate length and checksum of IP header.
-            iph->tot_len = htons(sizeof(struct iphdr) + sizeof(struct udphdr) + dataLen);
-            iph->check = 0;
-            iph->check = ip_fast_csum(iph, iph->ihl);
-
             // Calculate UDP header checksum.
             udph->check = 0;
             udph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct udphdr) + dataLen, IPPROTO_UDP, csum_partial(udph, sizeof(struct udphdr) + dataLen, 0));
         }
+
+        // Calculate length and checksum of IP header.
+        iph->tot_len = htons(sizeof(struct iphdr) + l4header + dataLen);
+        iph->check = 0;
+        iph->check = ip_fast_csum(iph, iph->ihl);
         
         // Initialize variable that represents how much data we've sent.
         uint16_t sent;
@@ -448,6 +486,7 @@ static struct option longoptions[] =
     {"payload", required_argument, NULL, 10},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
+    {"icmp", no_argument, &icmp, 4},
     {"internal", no_argument, &internal, 5},
     {"nostats", no_argument, &nostats, 9},
     {"urg", no_argument, &tcp_urg, 11},
@@ -456,6 +495,8 @@ static struct option longoptions[] =
     {"rst", no_argument, &tcp_rst, 11},
     {"syn", no_argument, &tcp_syn, 11},
     {"fin", no_argument, &tcp_fin, 11},
+    {"icmptype", required_argument, NULL, 12},
+    {"icmpcode", required_argument, NULL, 13},
     {"help", no_argument, &help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -534,6 +575,16 @@ void parse_command_line(int argc, char *argv[])
 
                 break;
 
+            case 12:
+                icmp_type = atoi(optarg);
+
+                break;
+
+            case 13:
+                icmp_code = atoi(optarg);
+
+                break;
+
             case 'v':
                 verbose = 1;
 
@@ -601,6 +652,9 @@ int main(int argc, char *argv[])
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
             "--tcp => Send TCP packet with SYN flag set instead of UDP packet.\n" \
+            "--icmp => Send ICMP packets.\n" \
+            "--icmptype => The ICMP type to send when --icmp is specified.\n" \
+            "--icmpcode => The ICMP code to send when --icmp is specified.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
 
         exit(0);
@@ -657,6 +711,9 @@ int main(int argc, char *argv[])
         info->tcp_rst = tcp_rst;
         info->tcp_syn = tcp_syn;
         info->tcp_fin = tcp_fin;
+        info->icmp = icmp;
+        info->icmp_type = icmp_type;
+        info->icmp_code = icmp_code;
         info->startingTime = startTime;
         info->id = i;
         info->payloadLength = 0;
