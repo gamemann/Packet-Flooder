@@ -36,6 +36,7 @@ uint16_t min;
 uint16_t max;
 uint64_t pcktCountMax;
 time_t seconds;
+char *payload;
 int help = 0;
 int tcp = 0;
 int verbose = 0;
@@ -62,6 +63,8 @@ struct pthread_info
     uint16_t max;
     uint64_t pcktCountMax;
     time_t seconds;
+    uint8_t payload[MAX_PCKT_LENGTH];
+    uint16_t payloadLength;
     int tcp;
     int verbose;
     int internal;
@@ -244,17 +247,33 @@ void *threadHndl(void *data)
         iph->ttl = 64;
 
         // Calculate payload length and payload.
-        uint16_t dataLen = randNum(info->min, info->max, seed);
+        uint16_t dataLen;
 
         // Initialize payload.
         uint16_t l4header = (iph->protocol == IPPROTO_TCP) ? sizeof(struct tcphdr) : sizeof(struct udphdr);
         unsigned char *data = (unsigned char *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr) + l4header);
 
-        // Fill out payload with random characters.
-        for (uint16_t i = 0; i < dataLen; i++)
+        // Check for custom payload.
+        if (info->payloadLength > 0)
         {
-            *data = rand_r(&seed);
-            *data++;
+            dataLen = info->payloadLength;
+
+            for (uint16_t i = 0; i < info->payloadLength; i++)
+            {
+                *data = info->payload[i];
+                *data++;
+            }
+        }
+        else
+        {
+            dataLen = randNum(info->min, info->max, seed);
+
+            // Fill out payload with random characters.
+            for (uint16_t i = 0; i < dataLen; i++)
+            {
+                *data = rand_r(&seed);
+                *data++;
+            }
         }
 
         // Check protocol.
@@ -377,6 +396,7 @@ static struct option longoptions[] =
     {"time", required_argument, NULL, 6},
     {"smac", required_argument, NULL, 7},
     {"dmac", required_argument, NULL, 8},
+    {"payload", required_argument, NULL, 10},
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"internal", no_argument, &internal, 5},
@@ -454,6 +474,11 @@ void parse_command_line(int argc, char *argv[])
 
                 break;
 
+            case 10:
+                payload = optarg;
+
+                break;
+
             case 'v':
                 verbose = 1;
 
@@ -503,6 +528,7 @@ int main(int argc, char *argv[])
             "--time => Amount of time in seconds to run tool for.\n" \
             "--smac => Source MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.\n" \
+            "--payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.\n" \
             "--verbose -v => Print how much data we sent each time.\n" \
             "--nostats => Do not track PPS and bandwidth. This may increase performance.\n" \
             "--min => Minimum payload length.\n" \
@@ -560,6 +586,7 @@ int main(int argc, char *argv[])
         info->nostats = nostats;
         info->startingTime = startTime;
         info->id = i;
+        info->payloadLength = 0;
 
         // Check for inputted destination MAC.
         if (dMAC[0] == 0 && dMAC[1] == 0 && dMAC[2] == 0 && dMAC[3] == 0 && dMAC[4] == 0 && dMAC[5] == 0)
@@ -573,6 +600,30 @@ int main(int argc, char *argv[])
         }
 
         memcpy(info->sMAC, sMAC, ETH_ALEN);
+
+        // Do custom payload if set.
+        if (payload != NULL)
+        {
+            // Split argument by space.
+            char *split;
+
+            // Create temporary string.
+            char *str = malloc((strlen(payload) + 1) * sizeof(char));
+            strcpy(str, payload);
+
+            split = strtok(str, " ");
+
+            while (split != NULL)
+            {
+                sscanf(split, "%2hhx", &info->payload[info->payloadLength]);
+                
+                info->payloadLength++;
+                split = strtok(NULL, " ");
+            }
+
+            // Free temporary string.
+            free(str);
+        }
         
 
         if (pthread_create(&pid[i], NULL, threadHndl, (void *)info) != 0)
