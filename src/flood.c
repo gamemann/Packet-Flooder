@@ -30,13 +30,13 @@
 char *interface;
 char *sIP;
 char *dIP;
-uint16_t port;
-uint64_t interval;
+uint16_t port = 0;
+uint64_t interval = 1000000;
 uint16_t threads;
-uint16_t min;
-uint16_t max;
-uint64_t pcktCountMax;
-time_t seconds;
+uint16_t min = 0;
+uint16_t max = 1200;
+uint64_t pcktCountMax = 0;
+time_t seconds = 0;
 char *payload;
 int help = 0;
 int tcp = 0;
@@ -44,12 +44,12 @@ int icmp = 0;
 int verbose = 0;
 int internal = 0;
 int nostats = 0;
-int tcp_urg;
-int tcp_ack;
-int tcp_psh;
-int tcp_rst;
-int tcp_syn;
-int tcp_fin;
+int tcp_urg = 0;
+int tcp_ack = 0;
+int tcp_psh = 0;
+int tcp_rst = 0;
+int tcp_syn = 0;
+int tcp_fin = 0;
 int icmp_type = 0;
 int icmp_code = 0;
 uint8_t sMAC[ETH_ALEN];
@@ -88,10 +88,10 @@ struct pthread_info
     int tcp_fin;
     int icmp_type;
     int icmp_code;
-
-    time_t startingTime;
     uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
+
+    time_t startingTime;
     uint16_t id;
 };
 
@@ -604,21 +604,8 @@ void parse_command_line(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    // Set optional defaults.
+    // Set defaults.
     threads = get_nprocs();
-    interval = 1000000;
-    port = 0;
-    min = 0;
-    max = 1200;
-    pcktCountMax = 0;
-    seconds = 0;
-    nostats = 0;
-    tcp_urg = 0;
-    tcp_ack = 0;
-    tcp_psh = 0;
-    tcp_rst = 0;
-    tcp_syn = 0;
-    tcp_fin = 0;
     memset(sMAC, 0, ETH_ALEN);
     memset(dMAC, 0, ETH_ALEN);
 
