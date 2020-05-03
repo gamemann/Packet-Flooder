@@ -46,7 +46,6 @@ Usage for: ./flood:
 --icmptype => The ICMP type to send when --icmp is specified.
 --icmpcode => The ICMP code to send when --icmp is specified.
 --help -h => Show help menu information.
-
 ```
 
 Example:
