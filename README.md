@@ -31,7 +31,7 @@ Usage for: ./flood:
 --smac => Source MAC address in xx:xx:xx:xx:xx:xx format.
 --dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.
 --payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.
---verbose -v => Print how much data we sent each time.
+--verbose -v => Print how much data we've sent each time.
 --nostats => Do not track PPS and bandwidth. This may increase performance.
 --min => Minimum payload length.
 --max => Maximum payload length.

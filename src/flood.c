@@ -529,7 +529,7 @@ int main(int argc, char *argv[])
             "--smac => Source MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--dmac => Destination MAC address in xx:xx:xx:xx:xx:xx format.\n" \
             "--payload => The payload to send. Format is in hexadecimal. Example: FF FF FF FF 49.\n" \
-            "--verbose -v => Print how much data we sent each time.\n" \
+            "--verbose -v => Print how much data we've sent each time.\n" \
             "--nostats => Do not track PPS and bandwidth. This may increase performance.\n" \
             "--min => Minimum payload length.\n" \
             "--max => Maximum payload length.\n" \
