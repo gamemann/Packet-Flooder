@@ -21,9 +21,10 @@ Here's output from the `--help` flag that goes over the program's command line u
 ./flood --help
 Usage for: ./flood:
 --dev -i => Interface name to bind to.
---src -s => Source address (none = random/spoof).
+--src -s => Source address (0/unset = random/spoof).
 --dst -d => Destination IP to send packets to.
---port -p => Destination port (0 = random port).
+--port -p => Destination port (0/unset = random port).
+--sport => Source port (0/unset = random port).
 --interval => Interval between sending packets in micro seconds.
 --threads -t => Amount of threads to spawn (default is host's CPU count).
 --count -c => The maximum packet count allowed sent.
