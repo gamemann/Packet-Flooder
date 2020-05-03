@@ -386,7 +386,7 @@ void *threadHndl(void *data)
 
             // Calculate ICMP header's checksum.
             icmph->checksum = 0;
-            icmph->checksum = do_csum((void *)icmph, sizeof(struct icmphdr) + dataLen);
+            icmph->checksum = icmp_csum((uint16_t *)icmph, sizeof(struct icmphdr) + dataLen);
         }
         else
         {
