@@ -131,6 +131,9 @@ void *threadHndl(void *data)
     sin.sll_protocol = htons(ETH_P_IP);
     sin.sll_halen = ETH_ALEN;
 
+    // Thread local variables.
+    uint64_t count;
+
     // Initialize socket FD.
     int sockfd;
 
@@ -174,7 +177,16 @@ void *threadHndl(void *data)
     while (1)
     {
         // Create rand_r() seed.
-        unsigned int seed = (unsigned int)(pcktCount + info->id);
+        unsigned int seed;
+        
+        if (info->nostats)
+        {
+            seed = time(NULL) ^ getpid() ^ pthread_self();
+        }
+        else
+        {
+            seed = (unsigned int)(pcktCount + info->id);
+        }
 
         // Get source port (random).
         uint16_t srcPort;
