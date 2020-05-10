@@ -1,6 +1,6 @@
 # Packet Flooder
 ## Description
-This is an improved version of my UDP Sender [program](https://github.com/gamemann/UDP-Sender). However, this program also supports TCP and ICMP packets. The source IP is completely randomized/spoofed each time a packet is sent. 
+This is an improved version of my UDP Sender [program](https://github.com/gamemann/UDP-Sender). This program now supports both TCP and ICMP packets and it's also **a lot** faster than the original UDP Sender program due to threading improvements.
 
 ## Why Did I Make This?
 I've been learning how to mitigate TCP-related attacks recently and decided to make a TCP SYN flood tool. Since I was planning to rewrite my UDP Sender program anyways, I decided to create a program that does both UDP and TCP (SYN) floods.
@@ -11,7 +11,9 @@ I used GCC to compile this program. You must add `-lpthread` at the end of the c
 Here's an example:
 
 ```
-gcc -g src/flood.c -o src/flood -lpthread
+git clone https://github.com/gamemann/Packet-Flooder.git
+cd Packet-Flooder
+gcc -g src/flood.c -o flood -lpthread
 ```
 
 ## Usage
