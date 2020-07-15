@@ -225,7 +225,7 @@ void *threadHndl(void *data)
         if (info->sIP == NULL)
         {
             // Spoof source IP as any IP address.
-            uint16_t tmp[4];
+            uint8_t tmp[4];
 
             if (internal)
             {
