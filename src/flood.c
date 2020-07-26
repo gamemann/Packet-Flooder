@@ -519,107 +519,114 @@ static struct option longoptions[] =
 
 void parse_command_line(int argc, char *argv[])
 {
-    int c;
+    int c = -1;
 
     // Parse command line.
-    while ((c = getopt_long(argc, argv, "i:d:t:vhs:p:c:", longoptions, NULL)) != -1)
+    while (optind < argc)
     {
-        switch(c)
+        if ((c = getopt_long(argc, argv, "i:d:t:vhs:p:c:", longoptions, NULL)) != -1)
         {
-            case 'i':
-                interface = optarg;
+            switch(c)
+            {
+                case 'i':
+                    interface = optarg;
 
-                break;
+                    break;
 
-            case 's':
-                sIP = optarg;
+                case 's':
+                    sIP = optarg;
 
-                break;
+                    break;
 
-            case 'd':
-                dIP = optarg;
+                case 'd':
+                    dIP = optarg;
 
-                break;
+                    break;
 
-            case 'p':
-                port = atoi(optarg);
+                case 'p':
+                    port = atoi(optarg);
 
-                break;
+                    break;
 
-            case 14:
-                sport = atoi(optarg);
+                case 14:
+                    sport = atoi(optarg);
 
-                break;
+                    break;
 
-            case 1:
-                interval = strtoll(optarg, NULL, 10);
+                case 1:
+                    interval = strtoll(optarg, NULL, 10);
 
-                break;
+                    break;
 
-            case 't':
-                threads = atoi(optarg);
+                case 't':
+                    threads = atoi(optarg);
 
-                break;
+                    break;
 
-            case 2:
-                min = atoi(optarg);
+                case 2:
+                    min = atoi(optarg);
 
-                break;
+                    break;
 
-            case 3:
-                max = atoi(optarg);
+                case 3:
+                    max = atoi(optarg);
 
-                break;
+                    break;
 
-            case 'c':
-                pcktCountMax = strtoll(optarg, NULL, 10);
+                case 'c':
+                    pcktCountMax = strtoll(optarg, NULL, 10);
 
-                break;
+                    break;
 
-            case 6:
-                seconds = strtoll(optarg, NULL, 10);
+                case 6:
+                    seconds = strtoll(optarg, NULL, 10);
 
-                break;
+                    break;
 
-            case 7:
-                sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &sMAC[0], &sMAC[1], &sMAC[2], &sMAC[3], &sMAC[4], &sMAC[5]);
+                case 7:
+                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &sMAC[0], &sMAC[1], &sMAC[2], &sMAC[3], &sMAC[4], &sMAC[5]);
 
-                break;
+                    break;
 
-            case 8:
-                sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dMAC[0], &dMAC[1], &dMAC[2], &dMAC[3], &dMAC[4], &dMAC[5]);
+                case 8:
+                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dMAC[0], &dMAC[1], &dMAC[2], &dMAC[3], &dMAC[4], &dMAC[5]);
 
-                break;
+                    break;
 
-            case 10:
-                payload = optarg;
+                case 10:
+                    payload = optarg;
 
-                break;
+                    break;
 
-            case 12:
-                icmp_type = atoi(optarg);
+                case 12:
+                    icmp_type = atoi(optarg);
 
-                break;
+                    break;
 
-            case 13:
-                icmp_code = atoi(optarg);
+                case 13:
+                    icmp_code = atoi(optarg);
 
-                break;
+                    break;
 
-            case 'v':
-                verbose = 1;
+                case 'v':
+                    verbose = 1;
 
-                break;
+                    break;
 
-            case 'h':
-                help = 1;
+                case 'h':
+                    help = 1;
 
-                break;
+                    break;
 
-            case '?':
-                fprintf(stderr, "Missing argument.\n");
+                case '?':
+                    fprintf(stderr, "Missing argument.\n");
 
-                break;
+                    break;
+            }
+        }
+        else
+        {
+            optind++;
         }
     }
 }
