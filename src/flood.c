@@ -730,9 +730,9 @@ int main(int argc, char *argv[])
             "--max => Maximum payload length.\n" \
             "--tcp => Send TCP packets.\n" \
             "--icmp => Send ICMP packets.\n" \
-            "--ipip => Add outer IP header in IPIP format.\n" \
             "--icmptype => The ICMP type to send when --icmp is specified.\n" \
             "--icmpcode => The ICMP code to send when --icmp is specified.\n" \
+            "--ipip => Add outer IP header in IPIP format.\n" \
             "--ipipsrc => When IPIP is specified, use this as outer IP header's source address.\n" \
             "--ipipdst => When IPIP is specified, use this as outer IP header's destination address.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
