@@ -53,6 +53,9 @@ int tcp_syn = 0;
 int tcp_fin = 0;
 int icmp_type = 0;
 int icmp_code = 0;
+int ipip = 0;
+char *ipipsrc;
+char *ipipdst;
 uint8_t sMAC[ETH_ALEN];
 uint8_t dMAC[ETH_ALEN];
 
@@ -90,6 +93,9 @@ struct pthread_info
     int tcp_fin;
     int icmp_type;
     int icmp_code;
+    int ipip;
+    char *ipipsrc;
+    char *ipipdst;
     uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
 
@@ -185,6 +191,8 @@ void *threadHndl(void *data)
         // Create rand_r() seed.
         unsigned int seed;
 
+        uint16_t offset = 0;
+
         if (info->nostats)
         {
             seed = time(NULL) ^ getpid() ^ pthread_self();
@@ -260,8 +268,33 @@ void *threadHndl(void *data)
         memcpy(eth->h_source, info->sMAC, ETH_ALEN);
         memcpy(eth->h_dest, info->dMAC, ETH_ALEN);
 
+        // Increase offset.
+        offset += sizeof(struct ethhdr);
+
+        // Create outer IP header if enabled.
+        struct iphdr *oiph = NULL;
+
+        if (info->ipip)
+        {
+            oiph = (struct iphdr *)(buffer + offset);
+
+            // Fill out header.
+            oiph->ihl = 5;
+            oiph->version = 4;
+            oiph->protocol = IPPROTO_IPIP;
+            oiph->id = 0;
+            oiph->frag_off = 0;
+            oiph->saddr = inet_addr(info->ipipsrc);
+            oiph->daddr = inet_addr(info->ipipdst);
+            oiph->tos = 0x00;
+            oiph->ttl = 64;
+
+            // Increase offset.
+            offset += sizeof(struct iphdr);
+        }
+
         // Create IP header.
-        struct iphdr *iph = (struct iphdr *)(buffer + sizeof(struct ethhdr));
+        struct iphdr *iph = (struct iphdr *)(buffer + offset);
 
         // Fill out IP header.
         iph->ihl = 5;
@@ -288,6 +321,9 @@ void *threadHndl(void *data)
         iph->tos = 0x00;
         iph->ttl = 64;
 
+        // Increase offset.
+        offset += sizeof(struct iphdr);
+
         // Calculate payload length and payload.
         uint16_t dataLen;
 
@@ -312,7 +348,10 @@ void *threadHndl(void *data)
                 break;
         }
 
-        unsigned char *data = (unsigned char *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr) + l4header);
+        // Increase offset.
+        offset += l4header;
+
+        unsigned char *data = (unsigned char *)(buffer + offset);
 
         // Check for custom payload.
         if (info->payloadLength > 0)
@@ -337,11 +376,14 @@ void *threadHndl(void *data)
             }
         }
 
+        // Decrease offset since we're going back to fill in L4 layer.
+        offset -= l4header;
+
         // Check protocol.
         if (iph->protocol == IPPROTO_TCP)
         {
             // Create TCP header.
-            struct tcphdr *tcph = (struct tcphdr *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr));
+            struct tcphdr *tcph = (struct tcphdr *)(buffer + offset);
 
             // Fill out TCP header.
             tcph->doff = 5;
@@ -388,7 +430,7 @@ void *threadHndl(void *data)
         else if (iph->protocol == IPPROTO_ICMP)
         {
             // Create ICMP header.
-            struct icmphdr *icmph = (struct icmphdr *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr));
+            struct icmphdr *icmph = (struct icmphdr *)(buffer + offset);
 
             // Fill out ICMP header.
             icmph->type = info->icmp_type;
@@ -401,7 +443,7 @@ void *threadHndl(void *data)
         else
         {
             // Create UDP header.
-            struct udphdr *udph = (struct udphdr *)(buffer + sizeof(struct ethhdr) + sizeof(struct iphdr));
+            struct udphdr *udph = (struct udphdr *)(buffer + offset);
 
             // Fill out UDP header.
             udph->source = htons(srcPort);
@@ -413,15 +455,21 @@ void *threadHndl(void *data)
             udph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct udphdr) + dataLen, IPPROTO_UDP, csum_partial(udph, sizeof(struct udphdr) + dataLen, 0));
         }
 
-        // Calculate length and checksum of IP header.
+        // Calculate length and checksum of IP headers.
         iph->tot_len = htons(sizeof(struct iphdr) + l4header + dataLen);
         update_iph_checksum(iph);
+
+        if (oiph != NULL && info->ipip)
+        {
+            oiph->tot_len = htons((sizeof(struct iphdr) * 2) + l4header + dataLen);
+            update_iph_checksum(oiph);
+        }
         
         // Initialize variable that represents how much data we've sent.
         uint16_t sent;
 
         // Attempt to send data.
-        if ((sent = sendto(sockfd, buffer, ntohs(iph->tot_len) + sizeof(struct ethhdr), 0, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+        if ((sent = sendto(sockfd, buffer, ntohs(oiph->tot_len) + sizeof(struct ethhdr), 0, (struct sockaddr *)&sin, sizeof(sin))) < 0)
         {
             perror("send");
 
@@ -503,6 +551,7 @@ static struct option longoptions[] =
     {"verbose", no_argument, &verbose, 'v'},
     {"tcp", no_argument, &tcp, 4},
     {"icmp", no_argument, &icmp, 4},
+    {"ipip", no_argument, &ipip, 4},
     {"internal", no_argument, &internal, 5},
     {"nostats", no_argument, &nostats, 9},
     {"urg", no_argument, &tcp_urg, 11},
@@ -513,6 +562,8 @@ static struct option longoptions[] =
     {"fin", no_argument, &tcp_fin, 11},
     {"icmptype", required_argument, NULL, 12},
     {"icmpcode", required_argument, NULL, 13},
+    {"ipipsrc", required_argument, NULL, 15},
+    {"ipipdst", required_argument, NULL, 16},
     {"help", no_argument, &help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -608,6 +659,16 @@ void parse_command_line(int argc, char *argv[])
 
                     break;
 
+                case 15:
+                    ipipsrc = optarg;
+
+                    break;
+                
+                case 16:
+                    ipipdst = optarg;
+
+                    break;
+
                 case 'v':
                     verbose = 1;
 
@@ -671,6 +732,8 @@ int main(int argc, char *argv[])
             "--icmp => Send ICMP packets.\n" \
             "--icmptype => The ICMP type to send when --icmp is specified.\n" \
             "--icmpcode => The ICMP code to send when --icmp is specified.\n" \
+            "--ipipsrc => When IPIP is specified, use this as outer IP header's source address.\n" \
+            "--ipipdst => When IPIP is specified, use this as outer IP header's destination address.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
 
         exit(0);
@@ -731,6 +794,9 @@ int main(int argc, char *argv[])
         info->icmp = icmp;
         info->icmp_type = icmp_type;
         info->icmp_code = icmp_code;
+        info->ipip = ipip;
+        info->ipipsrc = ipipsrc;
+        info->ipipdst = ipipdst;
         info->startingTime = startTime;
         info->id = i;
         info->payloadLength = 0;
