@@ -48,6 +48,9 @@ Usage for: ./flood:
 --icmp => Send ICMP packets.
 --icmptype => The ICMP type to send when --icmp is specified.
 --icmpcode => The ICMP code to send when --icmp is specified.
+--ipip => Add outer IP header in IPIP format.
+--ipipsrc => When IPIP is specified, use this as outer IP header's source address.
+--ipipdst => When IPIP is specified, use this as outer IP header's destination address.
 --help -h => Show help menu information.
 ```
 
