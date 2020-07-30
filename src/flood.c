@@ -455,13 +455,19 @@ void *threadHndl(void *data)
             udph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct udphdr) + dataLen, IPPROTO_UDP, csum_partial(udph, sizeof(struct udphdr) + dataLen, 0));
         }
 
+        uint16_t pcktlen = 0;
+
         // Calculate length and checksum of IP headers.
-        iph->tot_len = htons(sizeof(struct iphdr) + l4header + dataLen);
+        pcktlen = sizeof(struct iphdr) + l4header + dataLen;
+
+        iph->tot_len = htons(pcktlen);
         update_iph_checksum(iph);
 
         if (oiph != NULL && info->ipip)
         {
-            oiph->tot_len = htons((sizeof(struct iphdr) * 2) + l4header + dataLen);
+            pcktlen = (sizeof(struct iphdr) * 2) + l4header + dataLen;
+
+            oiph->tot_len = htons(pcktlen);
             update_iph_checksum(oiph);
         }
         
@@ -469,7 +475,7 @@ void *threadHndl(void *data)
         uint16_t sent;
 
         // Attempt to send data.
-        if ((sent = sendto(sockfd, buffer, ntohs(oiph->tot_len) + sizeof(struct ethhdr), 0, (struct sockaddr *)&sin, sizeof(sin))) < 0)
+        if ((sent = sendto(sockfd, buffer, pcktlen + sizeof(struct ethhdr), 0, (struct sockaddr *)&sin, sizeof(sin))) < 0)
         {
             perror("send");
 
