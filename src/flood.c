@@ -465,7 +465,8 @@ void *threadHndl(void *data)
 
         if (oiph != NULL && info->ipip)
         {
-            pcktlen = (sizeof(struct iphdr) * 2) + l4header + dataLen;
+            // Add length of additional IP header (20 bytes).
+            pcktlen += sizeof(struct iphdr);
 
             oiph->tot_len = htons(pcktlen);
             update_iph_checksum(oiph);
