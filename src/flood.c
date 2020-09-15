@@ -64,6 +64,7 @@ uint8_t cont = 1;
 time_t startTime;
 uint64_t pcktCount = 0;
 uint64_t totalData = 0;
+pthread_mutex_t mutex;
 
 // Thread structure.
 struct pthread_info
@@ -491,7 +492,14 @@ void *threadHndl(void *data)
 
         if (!info->nostats || info->pcktCountMax > 0)
         {
+            // Lock mutex to avoid multiple threads from modifying value at the same time.
+            pthread_mutex_lock(&mutex);
+
+            // Increment the packet count.
             pcktCount++;
+
+            // Unlock the mutex.
+            pthread_mutex_unlock(&mutex);
         }
 
         // Verbose mode.
@@ -772,6 +780,9 @@ int main(int argc, char *argv[])
     // Start time.
     startTime = time(NULL);
 
+    // Initialize pthread mutex.
+    pthread_mutex_init(&mutex, NULL);
+
     // Loop thread each thread.
     for (uint16_t i = 0; i < threads; i++)
     {
@@ -846,12 +857,18 @@ int main(int argc, char *argv[])
             free(str);
         }
         
-
+        // Create thread.
         if (pthread_create(&pid[i], NULL, threadHndl, (void *)info) != 0)
         {
             fprintf(stderr, "Error spawning thread %" PRIu16 "...\n", i);
         }
+
+        // Join thread.
+        pthread_join(pid[i], NULL);
     }
+
+    // Destroy pthread mutex.
+    pthread_mutex_destroy(&mutex);
 
     // Signal.
     signal(SIGINT, signalHndl);
