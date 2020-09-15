@@ -500,12 +500,6 @@ void *threadHndl(void *data)
             fprintf(stdout, "Sent %d bytes to destination. (%" PRIu64 "/%" PRIu64 ")\n", sent, pcktCount, info->pcktCountMax);
         }
 
-        // Check if we should wait between packets.
-        if (info->interval > 0)
-        {
-            usleep(info->interval);
-        }
-
         // Check time elasped.
         if (info->seconds > 0)
         {
@@ -525,6 +519,12 @@ void *threadHndl(void *data)
             cont = 0;
 
             break;
+        }
+
+        // Check if we should wait between packets.
+        if (info->interval > 0)
+        {
+            usleep(info->interval);
         }
     }
 
