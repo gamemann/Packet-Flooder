@@ -867,9 +867,6 @@ int main(int argc, char *argv[])
         pthread_join(pid[i], NULL);
     }
 
-    // Destroy pthread mutex.
-    pthread_mutex_destroy(&mutex);
-
     // Signal.
     signal(SIGINT, signalHndl);
     
@@ -905,6 +902,9 @@ int main(int argc, char *argv[])
         fprintf(stdout, "Megabits Total => %" PRIu64 ".\nMegabits Per Second => %" PRIu64 ".\n\n", mbTotal, mbps);
     }
 
+    // Destroy pthread mutex.
+    pthread_mutex_destroy(&mutex);
+    
     // Exit program successfully.
     exit(0);
 }
