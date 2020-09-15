@@ -862,9 +862,6 @@ int main(int argc, char *argv[])
         {
             fprintf(stderr, "Error spawning thread %" PRIu16 "...\n", i);
         }
-
-        // Join thread.
-        pthread_join(pid[i], NULL);
     }
 
     // Signal.
@@ -904,7 +901,7 @@ int main(int argc, char *argv[])
 
     // Destroy pthread mutex.
     pthread_mutex_destroy(&mutex);
-    
+
     // Exit program successfully.
     exit(0);
 }
