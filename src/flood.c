@@ -64,7 +64,6 @@ uint8_t cont = 1;
 time_t startTime;
 volatile uint64_t pcktCount = 0;
 volatile uint64_t totalData = 0;
-pthread_mutex_t mutex;
 
 // Thread structure.
 struct pthread_info
@@ -492,15 +491,6 @@ void *threadHndl(void *data)
 
         if (!info->nostats || info->pcktCountMax > 0)
         {
-            // Lock mutex to avoid multiple threads from modifying value at the same time.
-            pthread_mutex_lock(&mutex);
-
-            // Increment the packet count.
-            pcktCount++;
-
-            // Unlock the mutex.
-            pthread_mutex_unlock(&mutex);
-
             // Check packet count.
             if (__sync_add_and_fetch(&pcktCount, 1) >= info->pcktCountMax)
             {
@@ -780,9 +770,6 @@ int main(int argc, char *argv[])
     // Start time.
     startTime = time(NULL);
 
-    // Initialize pthread mutex.
-    pthread_mutex_init(&mutex, NULL);
-
     // Loop thread each thread.
     for (uint16_t i = 0; i < threads; i++)
     {
@@ -880,7 +867,6 @@ int main(int argc, char *argv[])
     sleep(1);
 
     // Statistics
-
     time_t totalTime = endTime - startTime;
 
     fprintf(stdout, "Finished in %lu seconds.\n\n", totalTime);
@@ -898,9 +884,6 @@ int main(int argc, char *argv[])
         fprintf(stdout, "Megabytes Total => %" PRIu64 ".\nMegabytes Per Second => %" PRIu64 ".\n\n", MBTotal, MBsp);
         fprintf(stdout, "Megabits Total => %" PRIu64 ".\nMegabits Per Second => %" PRIu64 ".\n\n", mbTotal, mbps);
     }
-
-    // Destroy pthread mutex.
-    pthread_mutex_destroy(&mutex);
 
     // Exit program successfully.
     exit(0);
