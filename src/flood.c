@@ -62,8 +62,8 @@ uint8_t dMAC[ETH_ALEN];
 // Global variables.
 uint8_t cont = 1;
 time_t startTime;
-uint64_t pcktCount = 0;
-uint64_t totalData = 0;
+volatile uint64_t pcktCount = 0;
+volatile uint64_t totalData = 0;
 pthread_mutex_t mutex;
 
 // Thread structure.
@@ -487,7 +487,7 @@ void *threadHndl(void *data)
         // Add onto stats if enabled.
         if (!info->nostats)
         {
-            totalData += sent;
+            __sync_add_and_fetch(&totalData, sent);
         }
 
         if (!info->nostats || info->pcktCountMax > 0)
@@ -500,6 +500,14 @@ void *threadHndl(void *data)
 
             // Unlock the mutex.
             pthread_mutex_unlock(&mutex);
+
+            // Check packet count.
+            if (__sync_add_and_fetch(&pcktCount, 1) >= info->pcktCountMax)
+            {
+                cont = 0;
+
+                break;
+            }
         }
 
         // Verbose mode.
@@ -519,14 +527,6 @@ void *threadHndl(void *data)
 
                 break;
             }
-        }
-
-        // Check packet count.
-        if (info->pcktCountMax > 0 && pcktCount >= info->pcktCountMax)
-        {
-            cont = 0;
-
-            break;
         }
 
         // Check if we should wait between packets.
