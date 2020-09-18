@@ -492,7 +492,7 @@ void *threadHndl(void *data)
         if (!info->nostats || info->pcktCountMax > 0)
         {
             // Check packet count.
-            if (__sync_add_and_fetch(&pcktCount, 1) >= info->pcktCountMax)
+            if (__sync_add_and_fetch(&pcktCount, 1) >= info->pcktCountMax && info->pcktCountMax > 0)
             {
                 cont = 0;
 
