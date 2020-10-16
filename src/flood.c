@@ -68,6 +68,8 @@ struct pthread_info
     uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
     uint16_t threads;
+    int nocsum;
+    int nocsum4;
 
     time_t startingTime;
     uint16_t id;
@@ -395,7 +397,11 @@ void *threadHndl(void *data)
 
             // Calculate TCP header checksum.
             tcph->check = 0;
-            tcph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct tcphdr) + dataLen, IPPROTO_TCP, csum_partial(tcph, sizeof(struct tcphdr) + dataLen, 0));
+
+            if (!info->nocsum4)
+            {
+                tcph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct tcphdr) + dataLen, IPPROTO_TCP, csum_partial(tcph, sizeof(struct tcphdr) + dataLen, 0));
+            }
         }
         else if (iph->protocol == IPPROTO_ICMP)
         {
@@ -408,7 +414,11 @@ void *threadHndl(void *data)
 
             // Calculate ICMP header's checksum.
             icmph->checksum = 0;
-            icmph->checksum = icmp_csum((uint16_t *)icmph, sizeof(struct icmphdr) + dataLen);
+
+            if (!info->nocsum4)
+            {
+                icmph->checksum = icmp_csum((uint16_t *)icmph, sizeof(struct icmphdr) + dataLen);
+            }
         }
         else
         {
@@ -422,7 +432,11 @@ void *threadHndl(void *data)
 
             // Calculate UDP header checksum.
             udph->check = 0;
-            udph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct udphdr) + dataLen, IPPROTO_UDP, csum_partial(udph, sizeof(struct udphdr) + dataLen, 0));
+
+            if (!info->nocsum4)
+            {
+                udph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, sizeof(struct udphdr) + dataLen, IPPROTO_UDP, csum_partial(udph, sizeof(struct udphdr) + dataLen, 0));
+            }
         }
 
         uint16_t pcktlen = 0;
@@ -431,7 +445,11 @@ void *threadHndl(void *data)
         pcktlen = sizeof(struct iphdr) + l4header + dataLen;
 
         iph->tot_len = htons(pcktlen);
-        update_iph_checksum(iph);
+
+        if (!info->nocsum)
+        {
+            update_iph_checksum(iph);
+        }
 
         if (oiph != NULL)
         {
@@ -439,7 +457,11 @@ void *threadHndl(void *data)
             pcktlen += sizeof(struct iphdr);
 
             oiph->tot_len = htons(pcktlen);
-            update_iph_checksum(oiph);
+
+            if (!info->nocsum)
+            {
+                update_iph_checksum(oiph);
+            }
         }
         
         // Initialize variable that represents how much data we've sent.
@@ -539,6 +561,8 @@ static struct option longoptions[] =
     {"icmpcode", required_argument, NULL, 13},
     {"ipipsrc", required_argument, NULL, 15},
     {"ipipdst", required_argument, NULL, 16},
+    {"nocsum", no_argument, &g_info.nocsum, 17},
+    {"nocsum4", no_argument, &g_info.nocsum4, 18},
     {"help", no_argument, &g_info.help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -644,6 +668,16 @@ void parse_command_line(int argc, char *argv[])
 
                     break;
 
+                case 17:
+                    g_info.nocsum = 1;
+
+                    break;
+
+                case 18:
+                    g_info.nocsum4 = 1;
+
+                    break;
+
                 case 'v':
                     g_info.verbose = 1;
 
@@ -710,6 +744,8 @@ int main(int argc, char *argv[])
             "--ipip => Add outer IP header in IPIP format.\n" \
             "--ipipsrc => When IPIP is specified, use this as outer IP header's source address.\n" \
             "--ipipdst => When IPIP is specified, use this as outer IP header's destination address.\n" \
+            "--nocsum => Do not calculate the IP header's checksum. Useful for checksum offloading on the hardware which'll result in better performance.\n" \
+            "--nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
 
         exit(0);
