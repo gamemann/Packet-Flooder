@@ -26,39 +26,6 @@
 
 #define MAX_PCKT_LENGTH 0xFFFF
 
-// Command line structure.
-char *interface;
-char *sIP;
-char *dIP;
-uint16_t port = 0;
-uint16_t sport = 0;
-uint64_t interval = 1000000;
-uint16_t threads;
-uint16_t min = 0;
-uint16_t max = 1200;
-uint64_t pcktCountMax = 0;
-time_t seconds = 0;
-char *payload;
-int help = 0;
-int tcp = 0;
-int icmp = 0;
-int verbose = 0;
-int internal = 0;
-int nostats = 0;
-int tcp_urg = 0;
-int tcp_ack = 0;
-int tcp_psh = 0;
-int tcp_rst = 0;
-int tcp_syn = 0;
-int tcp_fin = 0;
-int icmp_type = 0;
-int icmp_code = 0;
-int ipip = 0;
-char *ipipsrc;
-char *ipipdst;
-uint8_t sMAC[ETH_ALEN];
-uint8_t dMAC[ETH_ALEN];
-
 // Global variables.
 uint8_t cont = 1;
 time_t startTime;
@@ -79,6 +46,7 @@ struct pthread_info
     uint64_t pcktCountMax;
     time_t seconds;
     uint8_t payload[MAX_PCKT_LENGTH];
+    char *payloadStr;
     uint16_t payloadLength;
     int tcp;
     int icmp;
@@ -94,14 +62,16 @@ struct pthread_info
     int icmp_type;
     int icmp_code;
     int ipip;
+    int help;
     char *ipipsrc;
     char *ipipdst;
     uint8_t sMAC[ETH_ALEN];
     uint8_t dMAC[ETH_ALEN];
+    uint16_t threads;
 
     time_t startingTime;
     uint16_t id;
-};
+} g_info;
 
 void signalHndl(int tmp)
 {
@@ -553,23 +523,23 @@ static struct option longoptions[] =
     {"smac", required_argument, NULL, 7},
     {"dmac", required_argument, NULL, 8},
     {"payload", required_argument, NULL, 10},
-    {"verbose", no_argument, &verbose, 'v'},
-    {"tcp", no_argument, &tcp, 4},
-    {"icmp", no_argument, &icmp, 4},
-    {"ipip", no_argument, &ipip, 4},
-    {"internal", no_argument, &internal, 5},
-    {"nostats", no_argument, &nostats, 9},
-    {"urg", no_argument, &tcp_urg, 11},
-    {"ack", no_argument, &tcp_ack, 11},
-    {"psh", no_argument, &tcp_psh, 11},
-    {"rst", no_argument, &tcp_rst, 11},
-    {"syn", no_argument, &tcp_syn, 11},
-    {"fin", no_argument, &tcp_fin, 11},
+    {"verbose", no_argument, &g_info.verbose, 'v'},
+    {"tcp", no_argument, &g_info.tcp, 4},
+    {"icmp", no_argument, &g_info.icmp, 4},
+    {"ipip", no_argument, &g_info.ipip, 4},
+    {"internal", no_argument, &g_info.internal, 5},
+    {"nostats", no_argument, &g_info.nostats, 9},
+    {"urg", no_argument, &g_info.tcp_urg, 11},
+    {"ack", no_argument, &g_info.tcp_ack, 11},
+    {"psh", no_argument, &g_info.tcp_psh, 11},
+    {"rst", no_argument, &g_info.tcp_rst, 11},
+    {"syn", no_argument, &g_info.tcp_syn, 11},
+    {"fin", no_argument, &g_info.tcp_fin, 11},
     {"icmptype", required_argument, NULL, 12},
     {"icmpcode", required_argument, NULL, 13},
     {"ipipsrc", required_argument, NULL, 15},
     {"ipipdst", required_argument, NULL, 16},
-    {"help", no_argument, &help, 'h'},
+    {"help", no_argument, &g_info.help, 'h'},
     {NULL, 0, NULL, 0}
 };
 
@@ -585,102 +555,102 @@ void parse_command_line(int argc, char *argv[])
             switch(c)
             {
                 case 'i':
-                    interface = optarg;
+                    g_info.interface = optarg;
 
                     break;
 
                 case 's':
-                    sIP = optarg;
+                    g_info.sIP = optarg;
 
                     break;
 
                 case 'd':
-                    dIP = optarg;
+                    g_info.dIP = optarg;
 
                     break;
 
                 case 'p':
-                    port = atoi(optarg);
+                    g_info.port = atoi(optarg);
 
                     break;
 
                 case 14:
-                    sport = atoi(optarg);
+                    g_info.sport = atoi(optarg);
 
                     break;
 
                 case 1:
-                    interval = strtoll(optarg, NULL, 10);
+                    g_info.interval = strtoll(optarg, NULL, 10);
 
                     break;
 
                 case 't':
-                    threads = atoi(optarg);
+                    g_info.threads = atoi(optarg);
 
                     break;
 
                 case 2:
-                    min = atoi(optarg);
+                    g_info.min = atoi(optarg);
 
                     break;
 
                 case 3:
-                    max = atoi(optarg);
+                    g_info.max = atoi(optarg);
 
                     break;
 
                 case 'c':
-                    pcktCountMax = strtoll(optarg, NULL, 10);
+                    g_info.pcktCountMax = strtoll(optarg, NULL, 10);
 
                     break;
 
                 case 6:
-                    seconds = strtoll(optarg, NULL, 10);
+                   g_info. seconds = strtoll(optarg, NULL, 10);
 
                     break;
 
                 case 7:
-                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &sMAC[0], &sMAC[1], &sMAC[2], &sMAC[3], &sMAC[4], &sMAC[5]);
+                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &g_info.sMAC[0], &g_info.sMAC[1], &g_info.sMAC[2], &g_info.sMAC[3], &g_info.sMAC[4], &g_info.sMAC[5]);
 
                     break;
 
                 case 8:
-                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dMAC[0], &dMAC[1], &dMAC[2], &dMAC[3], &dMAC[4], &dMAC[5]);
+                    sscanf(optarg, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &g_info.dMAC[0], &g_info.dMAC[1], &g_info.dMAC[2], &g_info.dMAC[3], &g_info.dMAC[4], &g_info.dMAC[5]);
 
                     break;
 
                 case 10:
-                    payload = optarg;
+                    g_info.payloadStr = optarg;
 
                     break;
 
                 case 12:
-                    icmp_type = atoi(optarg);
+                    g_info.icmp_type = atoi(optarg);
 
                     break;
 
                 case 13:
-                    icmp_code = atoi(optarg);
+                    g_info.icmp_code = atoi(optarg);
 
                     break;
 
                 case 15:
-                    ipipsrc = optarg;
+                    g_info.ipipsrc = optarg;
 
                     break;
                 
                 case 16:
-                    ipipdst = optarg;
+                    g_info.ipipdst = optarg;
 
                     break;
 
                 case 'v':
-                    verbose = 1;
+                    g_info.verbose = 1;
 
                     break;
 
                 case 'h':
-                    help = 1;
+                    g_info.help = 1;
 
                     break;
 
@@ -700,15 +670,15 @@ void parse_command_line(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
     // Set defaults.
-    threads = get_nprocs();
-    memset(sMAC, 0, ETH_ALEN);
-    memset(dMAC, 0, ETH_ALEN);
+    g_info.threads = get_nprocs();
+    memset(g_info.sMAC, 0, ETH_ALEN);
+    memset(g_info.dMAC, 0, ETH_ALEN);
 
     // Parse the command line.
     parse_command_line(argc, argv);
 
     // Check if help flag is set. If so, print help information.
-    if (help)
+    if (g_info.help)
     {
         fprintf(stdout, "Usage for: %s:\n" \
             "--dev -i => Interface name to bind to.\n" \
@@ -746,7 +716,7 @@ int main(int argc, char *argv[])
     }
 
     // Check if interface argument was set.
-    if (interface == NULL)
+    if (g_info.interface == NULL)
     {
         fprintf(stderr, "Missing --dev option.\n");
 
@@ -754,7 +724,7 @@ int main(int argc, char *argv[])
     }
 
     // Check if destination IP argument was set.
-    if (dIP == NULL)
+    if (g_info.dIP == NULL)
     {
         fprintf(stderr, "Missing --dst option\n");
 
@@ -762,73 +732,43 @@ int main(int argc, char *argv[])
     }
 
     // Create pthreads.
-    pthread_t pid[threads];
+    pthread_t pid[g_info.threads];
 
     // Print information.
-    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Interval => %" PRIu64 " micro seconds.\n", dIP, port, interface, threads, interval);
+    fprintf(stdout, "Launching against %s:%d (0 = random) from interface %s. Thread count => %d and Interval => %" PRIu64 " micro seconds.\n", g_info.dIP, g_info.port, g_info.interface, g_info.threads, g_info.interval);
 
     // Start time.
     startTime = time(NULL);
 
     // Loop thread each thread.
-    for (uint16_t i = 0; i < threads; i++)
+    for (uint16_t i = 0; i < g_info.threads; i++)
     {
-        // Create new pthread info structure.
+        // Create new pthread_info struct to pass to thread and copy g_info to it.
         struct pthread_info *info = malloc(sizeof(struct pthread_info));
-
-        // Copy values over.
-        info->interface = interface;
-        info->sIP = sIP;
-        info->dIP = dIP;
-        info->port = port;
-        info->sport = sport;
-        info->interval = interval;
-        info->max = max;
-        info->min = min;
-        info->pcktCountMax = pcktCountMax;
-        info->seconds = seconds;
-        info->verbose = verbose;
-        info->tcp = tcp;
-        info->internal = internal;
-        info->nostats = nostats;
-        info->tcp_urg = tcp_urg;
-        info->tcp_ack = tcp_ack;
-        info->tcp_psh = tcp_psh;
-        info->tcp_rst = tcp_rst;
-        info->tcp_syn = tcp_syn;
-        info->tcp_fin = tcp_fin;
-        info->icmp = icmp;
-        info->icmp_type = icmp_type;
-        info->icmp_code = icmp_code;
-        info->ipip = ipip;
-        info->ipipsrc = ipipsrc;
-        info->ipipdst = ipipdst;
-        info->startingTime = startTime;
-        info->id = i;
-        info->payloadLength = 0;
+        memcpy(info, &g_info, sizeof(struct pthread_info));
 
         // Check for inputted destination MAC.
-        if (dMAC[0] == 0 && dMAC[1] == 0 && dMAC[2] == 0 && dMAC[3] == 0 && dMAC[4] == 0 && dMAC[5] == 0)
+        if (info->dMAC[0] == 0 && info->dMAC[1] == 0 && info->dMAC[2] == 0 && info->dMAC[3] == 0 && info->dMAC[4] == 0 && info->dMAC[5] == 0)
         {
             // Get destination MAC address (gateway MAC).
             GetGatewayMAC(info->dMAC);
         }
         else
         {
-            memcpy(info->dMAC, dMAC, ETH_ALEN);
+            memcpy(info->dMAC, info->dMAC, ETH_ALEN);
         }
 
-        memcpy(info->sMAC, sMAC, ETH_ALEN);
+        memcpy(info->sMAC, info->sMAC, ETH_ALEN);
 
         // Do custom payload if set.
-        if (payload != NULL)
+        if (info->payloadStr != NULL)
         {
             // Split argument by space.
             char *split;
 
             // Create temporary string.
-            char *str = malloc((strlen(payload) + 1) * sizeof(char));
-            strcpy(str, payload);
+            char *str = malloc((strlen(info->payloadStr) + 1) * sizeof(char));
+            strcpy(str, info->payloadStr);
 
             split = strtok(str, " ");
 
@@ -871,7 +811,7 @@ int main(int argc, char *argv[])
 
     fprintf(stdout, "Finished in %lu seconds.\n\n", totalTime);
 
-    if (!nostats)
+    if (!g_info.nostats)
     {
         uint64_t pps = pcktCount / (uint64_t)totalTime;
         uint64_t MBTotal = totalData / 1000000;
