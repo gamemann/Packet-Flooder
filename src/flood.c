@@ -629,7 +629,7 @@ void parse_command_line(int argc, char *argv[])
                     break;
 
                 case 6:
-                   g_info. seconds = strtoll(optarg, NULL, 10);
+                   g_info.seconds = strtoll(optarg, NULL, 10);
 
                     break;
 
