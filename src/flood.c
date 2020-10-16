@@ -205,7 +205,7 @@ void *threadHndl(void *data)
             // Spoof source IP as any IP address.
             uint8_t tmp[4];
 
-            if (internal)
+            if (info->internal)
             {
                 tmp[0] = randNum(10, 10, seed);
                 tmp[1] = randNum(0, 254, seed + 1);
