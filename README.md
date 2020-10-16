@@ -1,12 +1,14 @@
-# Packet Flooder
+# Packet Flooder/Generator
 ## Description
-This is an improved version of my UDP Sender [program](https://github.com/gamemann/UDP-Sender). This program now supports both TCP and ICMP packets and it's also **a lot** faster than the original UDP Sender program due to threading improvements.
+This is a packet flooder/generator tool made in C that supports sending TCP, UDP, IPIP, and ICMP packets. This program also supports many features including randomizing each packet's characteristics such as its source IP, port, and more. This tool is also multithreaded by using `pthreads`. My goal is to achieve the highest packets per second rate with this tool while also being able to use neat features like randomizing payload, source IPs, and more.
+
+**Note** - Please use this tool at your own risk. I am not responsible for any damage done and do not support using this tool for illegal operations such as targeted (D)DoS attacks. This tool was primarily made for pen-testing.
 
 ## Why Did I Make This?
-I've been learning how to mitigate TCP-related attacks recently and decided to make a TCP SYN flood tool. Since I was planning to rewrite my UDP Sender program anyways, I decided to create a program that does both UDP and TCP (SYN) floods.
+I've been learning how to mitigate (D)DoS attacks against my Anycast network and wanted to do pen-testing using different characteristics in each packet. I figured I'd make a pen-testing tool I can use to test out my (D)DoS mitigation methods on firewalls I make in the future and present (including my [XDP Firewall](https://github.com/gamemann/XDP-Firewall)).
 
 ## Compiling
-I used GCC to compile this program. You must add `-lpthread` at the end of the command when compiling via GCC.
+I use GCC to compile this program. You must add `-lpthread` at the end of the command when compiling via GCC.
 
 Here's an example:
 
@@ -51,6 +53,8 @@ Usage for: ./flood:
 --ipip => Add outer IP header in IPIP format.
 --ipipsrc => When IPIP is specified, use this as outer IP header's source address.
 --ipipdst => When IPIP is specified, use this as outer IP header's destination address.
+--nocsum => Do not calculate the IP header's checksum. Useful for checksum offloading on the hardware which'll result in better performance.
+--nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.
 --help -h => Show help menu information.
 ```
 
