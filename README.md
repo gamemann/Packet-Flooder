@@ -57,6 +57,7 @@ Usage for: ./flood:
 --nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.
 --minttl => The minimum TTL (Time-To-Live) range for a packet.
 --maxttl => The maximum TTL (Time-To-Live) range for a packet.
+--tos => The TOS (Type Of Service) to set on each packet.
 --help -h => Show help menu information.
 ```
 
