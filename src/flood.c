@@ -735,6 +735,8 @@ int main(int argc, char *argv[])
     g_info.interval = 1000000;
     g_info.tos = 0;
 
+    g_info.startingTime = time(NULL);
+
     // Parse the command line.
     parse_command_line(argc, argv);
 
