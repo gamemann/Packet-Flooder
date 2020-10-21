@@ -725,6 +725,7 @@ int main(int argc, char *argv[])
     memset(g_info.dMAC, 0, ETH_ALEN);
     g_info.minTTL = 64;
     g_info.maxTTL = 64;
+    g_info.interval = 1000000;
 
     // Parse the command line.
     parse_command_line(argc, argv);
