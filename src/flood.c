@@ -70,6 +70,8 @@ struct pthread_info
     uint16_t threads;
     int nocsum;
     int nocsum4;
+    uint8_t minTTL;
+    uint8_t maxTTL;
 
     time_t startingTime;
     uint16_t id;
@@ -259,7 +261,8 @@ void *threadHndl(void *data)
             oiph->saddr = inet_addr(info->ipipsrc);
             oiph->daddr = inet_addr(info->ipipdst);
             oiph->tos = 0x00;
-            oiph->ttl = 64;
+
+            oiph->ttl = (uint8_t) randNum(g_info.minTTL, g_info.maxTTL, seed);
 
             // Increase offset.
             offset += sizeof(struct iphdr);
@@ -291,7 +294,8 @@ void *threadHndl(void *data)
         iph->saddr = inet_addr(IP);
         iph->daddr = inet_addr(info->dIP);
         iph->tos = 0x00;
-        iph->ttl = 64;
+
+        iph->ttl = (uint8_t) randNum(g_info.minTTL, g_info.maxTTL, seed);
 
         // Increase offset.
         offset += sizeof(struct iphdr);
@@ -563,6 +567,8 @@ static struct option longoptions[] =
     {"ipipdst", required_argument, NULL, 16},
     {"nocsum", no_argument, &g_info.nocsum, 17},
     {"nocsum4", no_argument, &g_info.nocsum4, 18},
+    {"minttl", required_argument, NULL, 19},
+    {"maxttl", required_argument, NULL, 20},
     {"help", no_argument, &g_info.help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -677,6 +683,16 @@ void parse_command_line(int argc, char *argv[])
                     g_info.nocsum4 = 1;
 
                     break;
+                
+                case 19:
+                    g_info.minTTL = (uint8_t) atoi(optarg);
+
+                    break;
+
+                case 20:
+                    g_info.maxTTL = (uint8_t) atoi(optarg);
+
+                    break;
 
                 case 'v':
                     g_info.verbose = 1;
@@ -707,6 +723,8 @@ int main(int argc, char *argv[])
     g_info.threads = get_nprocs();
     memset(g_info.sMAC, 0, ETH_ALEN);
     memset(g_info.dMAC, 0, ETH_ALEN);
+    g_info.minTTL = 64;
+    g_info.maxTTL = 64;
 
     // Parse the command line.
     parse_command_line(argc, argv);
@@ -746,6 +764,8 @@ int main(int argc, char *argv[])
             "--ipipdst => When IPIP is specified, use this as outer IP header's destination address.\n" \
             "--nocsum => Do not calculate the IP header's checksum. Useful for checksum offloading on the hardware which'll result in better performance.\n" \
             "--nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.\n" \
+            "--minttl => The minimum TTL (Time-To-Live) range for a packet.\n" \
+            "--maxttl => The maximum TTL (Time-To-Live) range for a packet.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
 
         exit(0);
