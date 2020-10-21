@@ -55,6 +55,8 @@ Usage for: ./flood:
 --ipipdst => When IPIP is specified, use this as outer IP header's destination address.
 --nocsum => Do not calculate the IP header's checksum. Useful for checksum offloading on the hardware which'll result in better performance.
 --nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.
+--minttl => The minimum TTL (Time-To-Live) range for a packet.
+--maxttl => The maximum TTL (Time-To-Live) range for a packet.
 --help -h => Show help menu information.
 ```
 
