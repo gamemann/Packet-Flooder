@@ -261,8 +261,8 @@ void *threadHndl(void *data)
             oiph->frag_off = 0;
             oiph->saddr = inet_addr(info->ipipsrc);
             oiph->daddr = inet_addr(info->ipipdst);
-            oiph->tos = 0x00;
-
+            oiph->tos = info->tos;
+            
             oiph->ttl = (uint8_t) randNum(info->minTTL, info->maxTTL, seed);
 
             // Increase offset.
