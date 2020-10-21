@@ -72,6 +72,7 @@ struct pthread_info
     int nocsum4;
     uint8_t minTTL;
     uint8_t maxTTL;
+    uint8_t tos;
 
     time_t startingTime;
     uint16_t id;
@@ -293,7 +294,7 @@ void *threadHndl(void *data)
         iph->frag_off = 0;
         iph->saddr = inet_addr(IP);
         iph->daddr = inet_addr(info->dIP);
-        iph->tos = 0x00;
+        iph->tos = info->tos;
 
         iph->ttl = (uint8_t) randNum(g_info.minTTL, g_info.maxTTL, seed);
 
@@ -569,6 +570,7 @@ static struct option longoptions[] =
     {"nocsum4", no_argument, &g_info.nocsum4, 18},
     {"minttl", required_argument, NULL, 19},
     {"maxttl", required_argument, NULL, 20},
+    {"tos", required_argument, NULL, 21},
     {"help", no_argument, &g_info.help, 'h'},
     {NULL, 0, NULL, 0}
 };
@@ -694,6 +696,11 @@ void parse_command_line(int argc, char *argv[])
 
                     break;
 
+                case 21:
+                    g_info.tos = (uint8_t) atoi(optarg);
+
+                    break;
+
                 case 'v':
                     g_info.verbose = 1;
 
@@ -726,6 +733,7 @@ int main(int argc, char *argv[])
     g_info.minTTL = 64;
     g_info.maxTTL = 64;
     g_info.interval = 1000000;
+    g_info.tos = 0;
 
     // Parse the command line.
     parse_command_line(argc, argv);
@@ -767,6 +775,7 @@ int main(int argc, char *argv[])
             "--nocsum4 => Do not calculate the layer 4's checksum (e.g. TCP/UDP). It will leave the checksum field as 0 in the headers.\n" \
             "--minttl => The minimum TTL (Time-To-Live) range for a packet.\n" \
             "--maxttl => The maximum TTL (Time-To-Live) range for a packet.\n" \
+            "--tos => The TOS (Type Of Service) to set on each packet.\n" \
             "--help -h => Show help menu information.\n", argv[0]);
 
         exit(0);
