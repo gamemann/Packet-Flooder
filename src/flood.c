@@ -263,7 +263,7 @@ void *threadHndl(void *data)
             oiph->daddr = inet_addr(info->ipipdst);
             oiph->tos = 0x00;
 
-            oiph->ttl = (uint8_t) randNum(g_info.minTTL, g_info.maxTTL, seed);
+            oiph->ttl = (uint8_t) randNum(info->minTTL, info->maxTTL, seed);
 
             // Increase offset.
             offset += sizeof(struct iphdr);
@@ -296,7 +296,7 @@ void *threadHndl(void *data)
         iph->daddr = inet_addr(info->dIP);
         iph->tos = info->tos;
 
-        iph->ttl = (uint8_t) randNum(g_info.minTTL, g_info.maxTTL, seed);
+        iph->ttl = (uint8_t) randNum(info->minTTL, info->maxTTL, seed);
 
         // Increase offset.
         offset += sizeof(struct iphdr);
