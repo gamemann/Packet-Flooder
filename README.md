@@ -29,6 +29,7 @@ Usage for: ./flood:
 --dst -d => Destination IP to send packets to.
 --port -p => Destination port (0/unset = random port).
 --sport => Source port (0/unset = random port).
+--internal => When set, if no source IP is specified, it will randomize the source IP from the 10.0.0.0/8 range.
 --interval => Interval between sending packets in micro seconds.
 --threads -t => Amount of threads to spawn (default is host's CPU count).
 --count -c => The maximum packet count allowed sent.
