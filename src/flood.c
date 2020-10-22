@@ -749,6 +749,7 @@ int main(int argc, char *argv[])
             "--dst -d => Destination IP to send packets to.\n" \
             "--port -p => Destination port (0/unset = random port).\n" \
             "--sport => Source port (0/unset = random port).\n" \
+            "--internal => When set, if no source IP is specified, it will randomize the source IP from the 10.0.0.0/8 range.\n" \
             "--interval => Interval between sending packets in micro seconds.\n" \
             "--threads -t => Amount of threads to spawn (default is host's CPU count).\n" \
             "--count -c => The maximum packet count allowed sent.\n" \
