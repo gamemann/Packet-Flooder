@@ -1,4 +1,9 @@
 # Packet Flooder/Generator
+## Newer Packet Sequence Program (Faster)
+I would recommend checking out my newer Packet Sequence program [here](https://github.com/gamemann/Packet-Sequence). This newer tool takes my Packet Flooding/Generator tool to the next level by making it so you can define sequences with more features such as sourcing out as specific IP/CIDR ranges. It is still under development, but I'm making great progress and hope to implement functionality that'll allow it to operate as a network monitoring tool.
+
+This tool is also **a lot** more faster than this Packet Flooder tool because I've moved as much instructions outside of the while loop (for sending packets) as possible. With that said, I've added command line support for replacing values in the first sequence. The only thing it does not include is native IPIP support. Other than that, it is overall a better solution than this program.
+
 ## Description
 This is a packet flooder/generator tool made in C that supports sending TCP, UDP, IPIP, and ICMP packets. This program also supports many features including randomizing each packet's characteristics such as its source IP, port, and more. This tool is also multithreaded by using `pthreads`. My goal is to achieve the highest packets per second rate with this tool while also being able to use neat features like randomizing payload, source IPs, and more.
 
@@ -6,9 +11,6 @@ This is a packet flooder/generator tool made in C that supports sending TCP, UDP
 
 ## Why Did I Make This?
 I've been learning how to mitigate (D)DoS attacks against my Anycast network and wanted to do pen-testing using different characteristics in each packet. I figured I'd make a pen-testing tool I can use to test out my (D)DoS mitigation methods on firewalls I make in the future and present (including my [XDP Firewall](https://github.com/gamemann/XDP-Firewall)).
-
-## Newer Packet Sequence Program
-I recommend checking out my newer Packet Sequence program [here](https://github.com/gamemann/Packet-Sequence). This newer tool takes my Packet Flooding/Generator tool to the next level by making it so you can define sequences with more features such as sourcing out as specific IP/CIDR ranges. It is still under development, but I'm making great progress and hope to implement functionality that'll allow it to operate as a network monitoring tool.
 
 ## Compiling
 I use GCC to compile this program. You must add `-lpthread` at the end of the command when compiling via GCC.
